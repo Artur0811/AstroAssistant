@@ -1,7 +1,8 @@
 import sys, ctypes
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox,QMainWindow
 from PyQt5.QtWidgets import QLabel, QLineEdit
 from PyQt5.QtCore import pyqtSignal, QObject
+from random import randrange
 
 setstell1= '''
 QPushButton {
@@ -16,7 +17,44 @@ color: rgb(248, 248, 255)
 QLineEdit {
 color: rgb(248, 248, 255)
 }
+QComboBox {
+color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
+}
+QComboBox QAbstractItemView {
+color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
+}
 '''
+
+
+class setting(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(600, 200, 700, 600)
+        self.setWindowTitle('Setting')
+        self.setStyleSheet('background: rgb(248, 248, 255);')
+
+        self.Fiel_line = QLabel(self)
+        self.Fiel_line.setText("Set path form periods program fiel:")
+        self.Fiel_line.move(100, 50)
+
+        self.Fiel_line_in = QLineEdit(self)
+        self.Fiel_line_in.move(100, 75)
+        self.Fiel_line_in.setMaxLength(50)
+
+        self.star_line = QLabel(self)
+        self.star_line.setText("Set path form star fiel:")
+        self.star_line.move(100, 150)
+
+        self.star_line_in = QLineEdit(self)
+        self.star_line_in.move(100, 175)
+        self.star_line_in.setMaxLength(50)
+
+        self.butn = QPushButton(self)
+        self.butn.setText("ok")
+        self.butn.show()
 
 class Example(QWidget):
     def __init__(self):
@@ -67,14 +105,27 @@ class Example(QWidget):
         self.butn1.clicked.connect(self.count)
 
         self.butn2 = QPushButton("Clear", self)
-        self.butn2.move(1500, 100)
+        self.butn2.move(1700, 100)
         self.butn2.resize(100, 50)
         self.butn2.clicked.connect(self.claer)
 
         self.butn3 = QPushButton("Dark", self)
-        self.butn3.move(1500, 50)
+        self.butn3.move(1700, 50)
         self.butn3.resize(100, 50)
         self.butn3.clicked.connect(self.dark)
+
+        self.box = QComboBox(self)
+        self.box.setGeometry(100, 250, 100, 25)
+        self.box.addItem("Atlass")
+        self.box.addItem("ZTF")
+        self.box.addItem("Other")
+
+        self.val_Ep = QLabel(self)
+        self.val_Ep.setText("Исправленная Epoch")
+        self.val_Ep.move(100, 300)
+
+        self.val_Ep_in = QLineEdit(self)
+        self.val_Ep_in.move(300, 300)
 
     def claer(self):
         self.line_F_in.clear()
@@ -93,8 +144,24 @@ class Example(QWidget):
             self.butn3.setText("Dark")
             self.setStyleSheet('background: rgb(248, 248, 255);')
 
+class win(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+    def w1(self):
+        self.w1 = setting()
+        self.w1.butn.clicked.connect(self.w2)
+        self.w1.butn.clicked.connect(self.w1.close)
+        self.w1.show()
+
+
+    def w2(self):
+        self.w2 = Example()
+        self.w2.show()
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = Example()
-    ex.show()
+    st = win()
+    st.w1()
     sys.exit(app.exec())
+
