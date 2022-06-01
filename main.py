@@ -15,7 +15,7 @@ QLabel {
 color: rgb(248, 248, 255)
 }
 QLineEdit {
-color: rgb(248, 248, 255)
+color: rgb(248, 248, 255);background: rgb(28, 28, 28);
 }
 QComboBox {
 color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
@@ -24,6 +24,73 @@ QComboBox QAbstractItemView {
 color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
 }
 '''
+
+class LightCurve:
+    def __init__(self, per, path, on, by, epoch, filter, new_fiel):
+        self.period = per
+        self.path = path
+        self.val_on = on
+        self.by = by
+        self.epoch = epoch
+        self.filter = filter
+        self.new_fiel = new_fiel
+    def make_epoch(self, ep):
+        m = float(self.epoch)
+        while True:
+            s = (m - ep) / float(self.period)
+            s_c = round(s) - 1
+            if -0.01<(s- s_c)%1 < 0.01:
+                return m
+            else:
+                m+=0.01
+
+    def make_LightCurve_not_per(self):
+        with open(self.path) as f:
+            a = f.read().split("\n")
+        if self.by ==  "ZTF":
+            c = self.new_fiel + "\ "[0] +self.by+self.filter+".txt"
+            b = c
+            with open(b, "w") as f:
+                for i in range(17, len(a)):
+                    if a[i]!= '':
+                        f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
+        if self.by == "Atlass":
+            pass
+        else:
+            pass
+    def  make_LightCurve_with_per(self):
+        with open(self.path) as f:
+            a = f.read().split("\n")
+        c = self.new_fiel + "\ "[0] + self.by + self.filter + "P.txt"
+        b = c
+        if self.val_on == "Минимуме":
+            min_ = [0, 0]
+            if self.by == "ZTF":
+                for i in range(17, len(a)):
+                    if a[i] != '':
+                        a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
+                        if float(a[i][1]) > min_[1]:
+                            min_ = [float(a[i][0]), float(a[i][1])]
+                correct_epoch = self.make_epoch(min_[0])
+        else:
+            max_ = [30, 30]
+            if self.by == "ZTF":
+                for i in range(17, len(a)):
+                    if a[i] != '':
+                        a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
+                        if float(a[i][1]) < max_[1]:
+                            max_ = [float(a[i][0]), float(a[i][1])]
+                correct_epoch = self.make_epoch(max_[0])
+
+
+        with open(b, "w") as f:
+            for i in range(17, len(a)):
+                if a[i] != "":
+                    rez = (float(a[i][0]) - correct_epoch) / float(self.period)
+                    rez_c = round(rez) - 1
+                    f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                    f.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
+        return correct_epoch
 
 
 class setting(QWidget):
@@ -54,7 +121,14 @@ class setting(QWidget):
 
         self.butn = QPushButton(self)
         self.butn.setText("ok")
-        self.butn.show()
+        self.butn.move(325, 400)
+
+    def start(self):
+        with open("seting.txt", "w") as f:
+            f.writelines(self.star_line_in.text()+"\n")
+            f.writelines(self.Fiel_line_in.text())
+        self.close()
+
 
 class Example(QWidget):
     def __init__(self):
@@ -63,6 +137,9 @@ class Example(QWidget):
         user = ctypes.windll.user32
         self.x = user.GetSystemMetrics(0)
         self.y = user.GetSystemMetrics(1)
+        with open("seting.txt") as f:
+            self.name_per_fiel = f.read().split("\n")[1]
+        self.err_key = 0
 
     def initUI(self):
         user = ctypes.windll.user32
@@ -88,8 +165,9 @@ class Example(QWidget):
         self.line_E.setText("Epoch:")
         self.line_E.move(100, 150)
 
-        self.line_E_in = QLineEdit(self)
-        self.line_E_in.move(300, 150)
+        self.line_Epoch_in = QLineEdit(self)
+        self.line_Epoch_in.move(300, 150)
+        self.line_Epoch_in.setMaxLength(50)
 
         self.line_F = QLabel(self)
         self.line_F.setText("Fiel path:")
@@ -97,7 +175,7 @@ class Example(QWidget):
 
         self.line_F_in = QLineEdit(self)
         self.line_F_in.move(300, 200)
-        self.line_F_in.setMaxLength(40)
+        self.line_F_in.setMaxLength(80)
 
         self.butn1 = QPushButton("go", self)
         self.butn1.move(800, 500)
@@ -114,46 +192,117 @@ class Example(QWidget):
         self.butn3.resize(100, 50)
         self.butn3.clicked.connect(self.dark)
 
-        self.box = QComboBox(self)
-        self.box.setGeometry(100, 250, 100, 25)
-        self.box.addItem("Atlass")
-        self.box.addItem("ZTF")
-        self.box.addItem("Other")
+        self.data_line= QLabel(self)
+        self.data_line.setText("Данные от:")
+        self.data_line.move(100, 250)
+
+        self.data_box = QComboBox(self)
+        self.data_box.setGeometry(300, 250, 100, 25)
+        self.data_box.addItem("Atlass")
+        self.data_box.addItem("ZTF")
+        self.data_box.addItem("Other")
 
         self.val_Ep = QLabel(self)
-        self.val_Ep.setText("Исправленная Epoch")
+        self.val_Ep.setText("Исправленная Epoch:")
         self.val_Ep.move(100, 300)
 
         self.val_Ep_in = QLineEdit(self)
         self.val_Ep_in.move(300, 300)
 
+        self.type_line = QLabel(self)
+        self.type_line.move(100, 350)
+        self.type_line.setText("Ноль в:")
+
+        self.type_box = QComboBox(self)
+        self.type_box.move(300, 350)
+        self.type_box.resize(100, 25)
+        self.type_box.addItem("Максимуме")
+        self.type_box.addItem("Минимуме")
+
+        self.filter_box = QComboBox(self)
+        self.filter_box.setGeometry(300, 400, 100, 25)
+        self.filter_box.addItems(["g", "r", "o", "c"])
+
+        self.filter_line = QLabel(self)
+        self.filter_line.setText("Filter")
+        self.filter_line.move(100, 400)
+
     def claer(self):
         self.line_F_in.clear()
         self.line_coord_in.clear()
-        self.line_E_in.clear()
+        self.line_Epoch_in.clear()
         self.line_Per_in.clear()
 
     def count(self):
-        self.butn1.setText("Готово")
+        if self.line_F_in.text() == "" or self.line_F_in.text() == "Обязательное поле":
+            self.line_F_in.setText("Обязательное поле")
+            self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.err_key =1
+        else:
+            if self.line_Epoch_in.text() == "" and self.line_Per_in.text() != "" or self.line_Epoch_in.text() == "Обязательное поле" and self.line_Per_in.text() != "":
+                self.line_Epoch_in.setText("Обязательное поле")
+                self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.err_key =2
+
+            elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
+                self.line_Per_in.setText("Обязательное поле")
+                self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.err_key = 3
+                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+
+            elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
+                self.err_key =0
+                otvet = LightCurve(self.line_Per_in.text(), self.line_F_in.text(), self.type_box.currentText(),
+                                   self.data_box.currentText(), self.line_Epoch_in.text(),
+                                   self.filter_box.currentText(), self.name_per_fiel)
+                rezult = otvet.make_LightCurve_with_per()
+                self.val_Ep_in.setText(str(rezult)[:10])
+
+            else:
+                otvet = LightCurve("",self.line_F_in.text(), "", self.data_box.currentText(), "",self.filter_box.currentText() ,self.name_per_fiel)
+                otvet.make_LightCurve_not_per()
 
     def dark(self):
         if self.butn3.text() == "Dark":
             self.butn3.setText("White")
             self.setStyleSheet(setstell1)
+            self.line_Per_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
+            self.line_F_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
+            self.line_Epoch_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
+            if self.err_key == 1:
+                self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            elif self.err_key ==2:
+                self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            elif self.err_key == 3:
+                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
         else:
             self.butn3.setText("Dark")
             self.setStyleSheet('background: rgb(248, 248, 255);')
+            self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.line_F_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+            if self.err_key == 1:
+                self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            elif self.err_key ==2:
+                self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            elif self.err_key == 3:
+                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+
 
 class win(QMainWindow):
     def __init__(self):
-        super().__init__()
+        super(QMainWindow, self).__init__()
 
     def w1(self):
         self.w1 = setting()
-        self.w1.butn.clicked.connect(self.w2)
-        self.w1.butn.clicked.connect(self.w1.close)
-        self.w1.show()
-
+        with open("seting.txt") as f:
+            if f.read() == "":
+                self.w1.butn.clicked.connect(self.w1.start)
+                self.w1.show()
+                self.w1.butn.clicked.connect(self.w2)
+            else:
+                self.w2()
 
     def w2(self):
         self.w2 = Example()
@@ -164,4 +313,3 @@ if __name__ == '__main__':
     st = win()
     st.w1()
     sys.exit(app.exec())
-
