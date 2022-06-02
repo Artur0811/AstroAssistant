@@ -55,7 +55,22 @@ class LightCurve:
                     if a[i]!= '':
                         f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
         if self.by == "Atlass":
-            pass
+            o = self.new_fiel+'\ '[0]+self.by+'o.txt'
+            o1 = o
+            c = self.new_fiel+'\ '[0] +self.by+'c.txt'
+            c1 = c
+            with open(o1,'w') as f1:
+                with open(c1,'w') as f2:
+                    for i in range(1, len(a)):
+                        if a[i] != '':
+                            r = a[i].split()
+                            print(r[1])
+                            if '-' not in r[1] and len(r[3]) <6:
+                                if r[5] == 'c':
+                                    f2.writelines(r[0] +' '+ r[1]+'\n')
+                                if r[5] == "o":
+                                    f1.writelines(r[0] +' '+ r[1]+'\n')
+
         else:
             pass
     def  make_LightCurve_with_per(self):
@@ -81,17 +96,58 @@ class LightCurve:
                         if float(a[i][1]) < max_[1]:
                             max_ = [float(a[i][0]), float(a[i][1])]
                 correct_epoch = self.make_epoch(max_[0])
+            if self.by == "Atlass":
+                for i in range(17, len(a)):
+                    r = a[i].split()
+                    if a[i] != '' and "-" not in r[1] and float(r[2]) < 1.5 and len(r[3]) < 6:
+                        a[i] = [r[0], r[1], r[5]]
+                        if float(a[i][1]) < max_[1]:
+                            max_ = [float(a[i][0]), float(a[i][1])]
+                correct_epoch = self.make_epoch(max_[0])
+
+                ft1= self.new_fiel + "\ "[0] + self.by + "oP.txt"
+                ft2 = self.new_fiel + "\ "[0] + self.by + "cP.txt"
+                f1 = ft1
+                f2 = ft2
+                with open(f1, "w") as f1:
+                    with open(f2, "w") as f2:
+                        for i in range(1, len(a)):
+                            if a[i] != '':
+                                rez = (float(a[i][0]) - correct_epoch) / float(self.period)
+                                rez_c = round(rez) - 1
+                                if a[i][2] == "c":
+                                    f2.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                                    f2.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
+                                else:
+                                    f1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                                    f1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
 
 
-        with open(b, "w") as f:
-            for i in range(17, len(a)):
-                if a[i] != "":
-                    rez = (float(a[i][0]) - correct_epoch) / float(self.period)
-                    rez_c = round(rez) - 1
-                    f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                    f.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
+        if self.by != "Atlass":
+            with open(b, "w") as f:
+                for i in range(17, len(a)):
+                    if a[i] != "":
+                        rez = (float(a[i][0]) - correct_epoch) / float(self.period)
+                        rez_c = round(rez) - 1
+                        f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                        f.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
         return correct_epoch
 
+class vari(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(500, 400, 500, 400)
+
+        self.btn_Reg = QPushButton(self)
+        self.btn_Reg.setText("REGISTR")
+        self.btn_Reg.setGeometry(50, 50, 175, 300)
+
+        self.btn_OBR = QPushButton(self)
+        self.btn_OBR.setText("OBR")
+        self.btn_OBR.setGeometry(275, 50, 175, 300)
 
 class setting(QWidget):
     def __init__(self):
@@ -129,6 +185,22 @@ class setting(QWidget):
             f.writelines(self.Fiel_line_in.text())
         self.close()
 
+class errWind(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+    def initUI(self):
+        self.setGeometry(500, 400, 400, 250)
+        self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setWindowTitle('ERR')
+
+        self.btn = QPushButton(self)
+        self.btn.setText("OK")
+        self.btn.satGeometry(400, 300, 100, 30)
+        self.btn.clicked.connect(self.ok)
+
+    def ok(self):
+        self.close()
 
 class Example(QWidget):
     def __init__(self):
@@ -239,6 +311,7 @@ class Example(QWidget):
             self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.err_key =1
         else:
+            self.line_F_in.setStyleSheet('background: rgb(248, 248, 255);')
             if self.line_Epoch_in.text() == "" and self.line_Per_in.text() != "" or self.line_Epoch_in.text() == "Обязательное поле" and self.line_Per_in.text() != "":
                 self.line_Epoch_in.setText("Обязательное поле")
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
@@ -253,6 +326,7 @@ class Example(QWidget):
 
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
                 self.err_key =0
+
                 otvet = LightCurve(self.line_Per_in.text(), self.line_F_in.text(), self.type_box.currentText(),
                                    self.data_box.currentText(), self.line_Epoch_in.text(),
                                    self.filter_box.currentText(), self.name_per_fiel)
