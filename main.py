@@ -1,8 +1,9 @@
-import sys, ctypes
+import sys, ctypes, os
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox,QMainWindow
-from PyQt5.QtWidgets import QLabel, QLineEdit
+from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox
 from PyQt5.QtCore import pyqtSignal, QObject
 from random import randrange
+from os import makedirs
 
 setstell1= '''
 QPushButton {
@@ -139,7 +140,9 @@ class vari(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(500, 400, 500, 400)
+        user = ctypes.windll.user32
+        self.setGeometry(user.GetSystemMetrics(0)//2-250, user.GetSystemMetrics(1)//2-200, 500, 400)
+        self.setStyleSheet('background: rgb(248, 248, 255);')
 
         self.btn_Reg = QPushButton(self)
         self.btn_Reg.setText("REGISTR")
@@ -219,34 +222,27 @@ class Example(QWidget):
         self.setWindowTitle('Звёздный помошник')
         self.setStyleSheet('background: rgb(248, 248, 255);')
 
-        self.line_coord = QLabel(self)
-        self.line_coord.setText("Coords (J2000):")
-        self.line_coord.move(100, 50)
-
-        self.line_coord_in = QLineEdit(self)
-        self.line_coord_in.move(300, 50)
-
         self.line_Per = QLabel(self)
         self.line_Per.setText("Period (d):")
-        self.line_Per.move(100, 100)
+        self.line_Per.move(100, 50)
 
         self.line_Per_in = QLineEdit(self)
-        self.line_Per_in.move(300, 100)
+        self.line_Per_in.move(300, 50)
 
         self.line_E = QLabel(self)
         self.line_E.setText("Epoch:")
-        self.line_E.move(100, 150)
+        self.line_E.move(100, 100)
 
         self.line_Epoch_in = QLineEdit(self)
-        self.line_Epoch_in.move(300, 150)
+        self.line_Epoch_in.move(300, 100)
         self.line_Epoch_in.setMaxLength(50)
 
         self.line_F = QLabel(self)
         self.line_F.setText("Fiel path:")
-        self.line_F.move(100, 200)
+        self.line_F.move(100, 150)
 
         self.line_F_in = QLineEdit(self)
-        self.line_F_in.move(300, 200)
+        self.line_F_in.move(300, 150)
         self.line_F_in.setMaxLength(80)
 
         self.butn1 = QPushButton("go", self)
@@ -266,39 +262,42 @@ class Example(QWidget):
 
         self.data_line= QLabel(self)
         self.data_line.setText("Данные от:")
-        self.data_line.move(100, 250)
+        self.data_line.move(100, 200)
 
         self.data_box = QComboBox(self)
-        self.data_box.setGeometry(300, 250, 100, 25)
+        self.data_box.setGeometry(300, 200, 100, 25)
         self.data_box.addItem("Atlass")
         self.data_box.addItem("ZTF")
         self.data_box.addItem("Other")
 
         self.val_Ep = QLabel(self)
         self.val_Ep.setText("Исправленная Epoch:")
-        self.val_Ep.move(100, 300)
+        self.val_Ep.move(100, 250)
 
         self.val_Ep_in = QLineEdit(self)
-        self.val_Ep_in.move(300, 300)
+        self.val_Ep_in.move(300, 250)
 
         self.type_line = QLabel(self)
-        self.type_line.move(100, 350)
+        self.type_line.move(100, 300)
         self.type_line.setText("Ноль в:")
 
         self.type_box = QComboBox(self)
-        self.type_box.move(300, 350)
+        self.type_box.move(300, 300)
         self.type_box.resize(100, 25)
         self.type_box.addItem("Максимуме")
         self.type_box.addItem("Минимуме")
 
         self.filter_box = QComboBox(self)
-        self.filter_box.setGeometry(300, 400, 100, 25)
+        self.filter_box.setGeometry(300, 350, 100, 25)
         self.filter_box.addItems(["g", "r", "o", "c"])
 
         self.filter_line = QLabel(self)
         self.filter_line.setText("Filter")
-        self.filter_line.move(100, 400)
+        self.filter_line.move(100, 350)
 
+        self.beak_btn = QPushButton(self)
+        self.beak_btn.setText("Beak")
+        self.beak_btn.setGeometry(1700, 150, 100, 50)
     def claer(self):
         self.line_F_in.clear()
         self.line_coord_in.clear()
@@ -363,14 +362,218 @@ class Example(QWidget):
             elif self.err_key == 3:
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
 
+class registrWin(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        self.ZTF_f = True
+        self.PANSTARRS_F = False
+        with open("seting.txt") as f:
+            self.path_star = f.readline().split("\n")[0]
+
+    def initUI(self):
+        user = ctypes.windll.user32
+        self.setGeometry(0, 0, user.GetSystemMetrics(0), user.GetSystemMetrics(1))
+        self.setWindowTitle('Звёздный помошник')
+        self.setStyleSheet('background: rgb(248, 248, 255);')
+
+        self.dark_btn = QPushButton(self)
+        self.dark_btn.setText("Dark")
+        self.dark_btn.setGeometry(1700, 100, 100, 50)
+        self.dark_btn.clicked.connect(self.dark)
+
+        self.beak_btn = QPushButton(self)
+        self.beak_btn.setText("Beak")
+        self.beak_btn.setGeometry(1700, 150, 100, 50)
+
+        self.star_name = QLabel(self)
+        self.star_name.setText("Имя звезды")
+        self.star_name.move(100, 50)
+
+        self.star_name_in = QLineEdit(self)
+        self.star_name_in.setGeometry(300, 50, 100, 25)
+        self.star_name_in.setMaxLength(25)
+
+        self.min_mag = QLabel(self)
+        self.min_mag.setText("Минимальная магнитуда")
+        self.min_mag.move(100, 300)
+
+        self.min_mag_in = QLineEdit(self)
+        self.min_mag_in.setGeometry(300, 300, 100, 25)
+
+        self.min_mag_filter = QComboBox(self)
+        self.min_mag_filter.addItems(["g", "r", "o", "c","i", "y", "z"])
+        self.min_mag_filter.setGeometry(410, 300, 100, 25)
+
+        self.max_mag = QLabel(self)
+        self.max_mag.setText("Максимальная магнитуда")
+        self.max_mag.move(100, 250)
+
+        self.max_mag_in = QLineEdit(self)
+        self.max_mag_in.setGeometry(300, 250, 100, 25)
+
+        self.max_mag_filter = QComboBox(self)
+        self.max_mag_filter.addItems(["g", "r", "o", "c", "i", "y", "z"])
+        self.max_mag_filter.setGeometry(410, 250, 100, 25)
+
+        self.coor_line = QLabel(self)
+        self.coor_line.setText("Координаты")
+        self.coor_line.move(100, 100)
+
+        self.coor_line_in = QLineEdit(self)
+        self.coor_line_in.setGeometry(300, 100, 100, 25)
+        self.coor_line_in.setMaxLength(20)
+
+        self.file_btn = QPushButton(self)
+        self.file_btn.setText("Create file")
+        self.file_btn.clicked.connect(self.create_file)
+        self.file_btn.setGeometry(800, 500, 100, 50)
+
+        self.clear_btn = QPushButton(self)
+        self.clear_btn.setGeometry(1700, 50, 100, 50)
+        self.clear_btn.setText("Clear")
+        self.clear_btn.clicked.connect(self.clear_line)
+
+        self.comm_line = QLabel(self)
+        self.comm_line.setText("Revizion comment")
+        self.comm_line.move(100, 550)
+
+        self.comm_line_in = QLineEdit(self)
+        self.comm_line_in.setGeometry(300, 550, 100, 25)
+        self.comm_line_in.setText("GaiaEDR3 position.")
+
+        self.ztf_rem = QLabel(self)
+        self.ztf_rem.setText("ZTF Remark")
+        self.ztf_rem.move(100, 500)
+
+        self.ztf_rem_ok = QCheckBox(self)
+        self.ztf_rem_ok.move(200, 500)
+        self.ztf_rem_ok.toggle()
+        self.ztf_rem_ok.clicked.connect(self.ZTF)
+
+        self.panstarrs_rem = QLabel(self)
+        self.panstarrs_rem.setText("PanSTARRS Remark")
+        self.panstarrs_rem.move(250, 500)
+
+        self.panstarrs_rem_ok = QCheckBox(self)
+        self.panstarrs_rem_ok.move(400, 500)
+        self.panstarrs_rem_ok.clicked.connect(self.PanStarrs)
+
+        self.oth_name = QLabel(self)
+        self.oth_name.setText("Другие имена")
+        self.oth_name.move(100, 150)
+
+        self.oth_name_in = QLineEdit(self)
+        self.oth_name_in.move(300, 150)
+
+        self.type_line = QLabel(self)
+        self.type_line.setText("Тип")
+        self.type_line.move(100, 200)
+
+        self.type_line_in_n = QLineEdit(self)
+        self.type_line_in_n.setGeometry(300, 200, 100, 25)
+
+        self.type_line_in = QComboBox(self)
+        self.type_line_in.addItems(["EA","EB","EW", "UG", "UGSU", "UGSS", "RR", "RS", "M", "BY", "RRC", "RRB", "L"])
+        self.type_line_in.move(150, 200)
+
+        self.per_line = QLabel(self)
+        self.per_line.setText("Период:")
+        self.per_line.move(100, 350)
+
+        self.per_line_in = QLineEdit(self)
+        self.per_line_in.setGeometry(300, 350, 100, 25)
+
+        self.Epoch_line = QLabel(self)
+        self.Epoch_line.setText("Эпоха (MGD):")
+        self.Epoch_line.move(100, 400)
+
+        self.Epoch_line_in = QLineEdit(self)
+        self.Epoch_line_in.setGeometry(300, 400, 100, 25)
+
+        self.eclipse_line = QLabel(self)
+        self.eclipse_line.move(100, 450)
+        self.eclipse_line.setText("% затмения")
+
+        self.eclipse_line_in = QLineEdit(self)
+        self.eclipse_line_in.setGeometry(300, 450, 100, 25)
+
+    def dark(self):
+        if self.dark_btn.text() == "Dark":
+            self.dark_btn.setText("White")
+            self.setStyleSheet(setstell1)
+        else:
+            self.dark_btn.setText("Dark")
+            self.setStyleSheet('background: rgb(248, 248, 255);')
+
+    def create_file(self):
+        if self.star_name_in.text() == "":
+            self.star_name_in.setText("Обязательное поле")
+        else:
+            stn = self.star_name_in.text()
+            p = self.path_star + "\ "[0] +stn
+            try:
+                makedirs(p)
+            except:
+                pass
+            p = p+"\ "[0] + stn + ".txt"
+            with open(p, "w") as f:
+                f.writelines("Name: " + self.star_name_in.text() + "\n" +"\n")
+                f.writelines("Coordinates: " + self.coor_line_in.text()+ "\n" + "\n")
+                f.writelines("Other name: " + "\n" + '\n')
+                f.writelines("Min. mag: " + self.min_mag_in.text() +" "+ self.min_mag_filter.currentText()+"\n")
+                f.writelines("Max. mag: " + self.max_mag_in.text() +" "+ self.max_mag_filter.currentText()+"\n"+"\n")
+                if self.type_line_in_n.text() != "":
+                    f.writelines("Type: " + self.type_line_in_n.text()+"\n")
+                else:
+                    f.writelines("Type: " + self.type_line_in.currentText()+"\n")
+                f.writelines("Period: "+ self.per_line_in.text() + "\n")
+                f.writelines("Epoch: " + self.Epoch_line_in.text() + "\n")
+                f.writelines("Eclipse: " + self.eclipse_line_in.text() + "%\n" + "\n")
+                f.writelines("Remark:"+"\n"+"\n")
+                if self.ZTF_f:
+                    f.writelines("Masci, F. J.; et al., 2019, The Zwicky Transient Facility: Data Processing, Products, and Archive"+"\n")
+                    f.writelines("2019PASP..131a8003M"+"\n"+"\n")
+                if self.PANSTARRS_F:
+                    f.writelines(
+                        "Chambers, K. C.; et al., 2016, The Pan-STARRS1 Surveys." + "\n")
+                    f.writelines("2016arxiv161205560C" + "\n" + "\n")
+                f.writelines("Revision:"+ "\n"+self.comm_line_in.text())
+
+    def clear_line(self):
+        self.coor_line_in.clear()
+        self.max_mag_in.clear()
+        self.min_mag_in.clear()
+        self.star_name_in.clear()
+
+    def ZTF(self):
+        if self.ZTF_f:
+            self.ZTF_f = False
+        else:
+            self.ZTF_f = True
+
+    def PanStarrs(self):
+        if self.PANSTARRS_F:
+            self.PANSTARRS_F = False
+        else:
+            self.PANSTARRS_F = True
 
 class win(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
+        self.path = os.getcwd()
 
     def w1(self):
         self.w1 = setting()
-        with open("seting.txt") as f:
+        try:
+            with open("seting.txt") as f:
+                pass
+        except:
+            a = self.path+"\seting.txt"
+            a = a
+            with open(a, "w") as f:
+                pass
+        with open("seting.txt", "r") as f:
             if f.read() == "":
                 self.w1.butn.clicked.connect(self.w1.start)
                 self.w1.show()
@@ -379,8 +582,39 @@ class win(QMainWindow):
                 self.w2()
 
     def w2(self):
-        self.w2 = Example()
-        self.w2.show()
+        self.w2 = win2()
+        self.w2.w1()
+
+class win2(QMainWindow):
+    def __init__(self):
+        super(QMainWindow, self).__init__()
+        self.wi2 = ""
+        self.wi3 = ""
+
+    def w1(self):
+        self.wi1 = vari()
+        self.wi1.show()
+        self.wi1.btn_OBR.clicked.connect(self.w2)
+        self.wi1.btn_Reg.clicked.connect(self.w3)
+    def w2(self):
+        self.wi1.close()
+        self.wi2 = Example()
+        self.wi2.show()
+        self.wi2.beak_btn.clicked.connect(self.beak)
+    def w3(self):
+        self.wi1.close()
+        self.wi3 = registrWin()
+        self.wi3.show()
+        self.wi3.beak_btn.clicked.connect(self.beak)
+    def beak(self):
+        if self.wi2 != '':
+            self.wi2.close()
+            self.wi2 = ''
+            self.w1()
+        if self.wi3 != '':
+            self.wi3.close()
+            self.wi3 = ""
+            self.w1()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
