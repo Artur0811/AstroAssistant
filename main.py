@@ -1,8 +1,11 @@
-import sys, ctypes, os
+import sys, ctypes
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox,QMainWindow
 from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox
+import seaborn as sns
+import matplotlib.pyplot as pyp
 from PyQt5.QtCore import pyqtSignal, QObject
 from random import randrange
+import os
 from os import makedirs
 
 setstell1= '''
@@ -25,9 +28,51 @@ QComboBox QAbstractItemView {
 color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
 }
 '''
+class makeGrapf:
+    def __init__(self, path, savef, name, phase=False):
+        self.path = path
+        self.name =name
+        self.savef = savef
+        self.phase = phase
+    def make(self):
+        ymin = 99
+        ymax = 0
+        for i in range(len(self.path)):
+            x = []
+            y = []
+            with open(self.path[i]) as f:
+                for i in f:
+                    x.append(float(i.split()[0]))
+                    y.append(float(i.split()[1]))
+            g = sns.scatterplot(x, y)
+            mi, ma = min(y), max(y)
+            if mi < ymin:
+                ymin = mi
+            if ma > ymax:
+                ymax = ma
+        sns.set_style("ticks")
+        sns.color_palette('dark')
+        g.figure.set_figwidth(12)
+        g.figure.set_figheight(8)
+        pyp.ylim(ymax+0.5, ymin-0.5)
+        if self.phase:
+            pyp.title(self.name, fontsize=23)
+            pyp.ylabel("Magnitude", fontsize=18)
+            pyp.xlabel("Phase", fontsize=18)
+        else:
+            pyp.title(self.name, fontsize=23)
+            pyp.ylabel("Magnitude", fontsize=18)
+            pyp.xlabel("MJD", fontsize=18)
+        pyp.savefig(self.savef+"\ "[0]+self.name+".png")
+        pyp.close()
+
+mak = makeGrapf(["C:\stars\регистрация звезд\звёзды\Minkovskiy 20\ztf g.txt", "C:\stars\регистрация звезд\звёзды\Minkovskiy 20\ztf r.txt"],
+                "C:\stars\регистрация звезд\звёзды\пробные периоды",
+                "popitka")
+mak.make()
 
 class LightCurve:
-    def __init__(self, per, path, on, by, epoch, filter, new_fiel):
+    def __init__(self, per, path, on, by, epoch, filter, new_fiel, make = False):
         self.period = per
         self.path = path
         self.val_on = on
@@ -35,7 +80,9 @@ class LightCurve:
         self.epoch = epoch
         self.filter = filter
         self.new_fiel = new_fiel
+        self.make = make
     def make_epoch(self, ep):
+        print(ep)
         m = float(self.epoch)
         while True:
             s = (m - ep) / float(self.period)
@@ -55,6 +102,9 @@ class LightCurve:
                 for i in range(17, len(a)):
                     if a[i]!= '':
                         f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
+            if self.make:
+                g = makeGrapf([b], self.new_fiel, " ")
+                g.make()
         if self.by == "Atlass":
             o = self.new_fiel+'\ '[0]+self.by+'o.txt'
             o1 = o
@@ -71,7 +121,9 @@ class LightCurve:
                                     f2.writelines(r[0] +' '+ r[1]+'\n')
                                 if r[5] == "o":
                                     f1.writelines(r[0] +' '+ r[1]+'\n')
-
+            if self.make:
+                g1 = makeGrapf([o1], self.new_fiel, " ")
+                g1.make()
         else:
             pass
     def  make_LightCurve_with_per(self):
@@ -132,6 +184,9 @@ class LightCurve:
                         rez_c = round(rez) - 1
                         f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
                         f.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
+            if self.make:
+                g = makeGrapf([b], self.new_fiel, " ")
+                g.make()
         return correct_epoch
 
 class vari(QWidget):
@@ -215,6 +270,7 @@ class Example(QWidget):
         with open("seting.txt") as f:
             self.name_per_fiel = f.read().split("\n")[1]
         self.err_key = 0
+        self.make = False
 
     def initUI(self):
         user = ctypes.windll.user32
@@ -298,11 +354,25 @@ class Example(QWidget):
         self.beak_btn = QPushButton(self)
         self.beak_btn.setText("Beak")
         self.beak_btn.setGeometry(1700, 150, 100, 50)
+
+        self.make_grath_true = QCheckBox(self)
+        self.make_grath_true.move(300, 400)
+        self.make_grath_true.clicked.connect(self.make_g)
+
+        self.make_grath = QLabel(self)
+        self.make_grath.move(100, 400)
+        self.make_grath.setText("Make grath")
     def claer(self):
         self.line_F_in.clear()
         self.line_coord_in.clear()
         self.line_Epoch_in.clear()
         self.line_Per_in.clear()
+
+    def make_g(self):
+        if self.make:
+            self.make = False
+        else:
+            self.make = True
 
     def count(self):
         if self.line_F_in.text() == "" or self.line_F_in.text() == "Обязательное поле":
@@ -316,24 +386,21 @@ class Example(QWidget):
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                 self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.err_key =2
-
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
                 self.line_Per_in.setText("Обязательное поле")
                 self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.err_key = 3
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
                 self.err_key =0
-
                 otvet = LightCurve(self.line_Per_in.text(), self.line_F_in.text(), self.type_box.currentText(),
                                    self.data_box.currentText(), self.line_Epoch_in.text(),
-                                   self.filter_box.currentText(), self.name_per_fiel)
+                                   self.filter_box.currentText(), self.name_per_fiel, self.make)
                 rezult = otvet.make_LightCurve_with_per()
                 self.val_Ep_in.setText(str(rezult)[:10])
 
             else:
-                otvet = LightCurve("",self.line_F_in.text(), "", self.data_box.currentText(), "",self.filter_box.currentText() ,self.name_per_fiel)
+                otvet = LightCurve("",self.line_F_in.text(), "", self.data_box.currentText(), "",self.filter_box.currentText() ,self.name_per_fiel, make=self.make)
                 otvet.make_LightCurve_not_per()
 
     def dark(self):
@@ -545,6 +612,12 @@ class registrWin(QWidget):
         self.max_mag_in.clear()
         self.min_mag_in.clear()
         self.star_name_in.clear()
+        self.eclipse_line_in.clear()
+        self.oth_name_in.clear()
+        self.type_line_in_n.clear()
+        self.comm_line_in.setText("GaiaEDR3 position.")
+        self.per_line_in.clear()
+        self.Epoch_line_in.clear()
 
     def ZTF(self):
         if self.ZTF_f:
