@@ -1,12 +1,16 @@
-import sys, ctypes
+import sys, ctypes,math
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox,QMainWindow
-from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox
+from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox, QPlainTextEdit
+from PyQt5.QtGui import QPixmap
 import seaborn as sns
 import matplotlib.pyplot as pyp
 from PyQt5.QtCore import pyqtSignal, QObject
 from random import randrange
 import os
 from os import makedirs
+import requests
+import re
+
 
 setstell1= '''
 QPushButton {
@@ -27,11 +31,152 @@ color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(2
 QComboBox QAbstractItemView {
 color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
 }
+QPlainTextEdit {
+color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
+}
 '''
-class makeGrapf:
+
+def Lafler_clinman(name):
+    with open(name) as f:
+        m = []
+        for i in f:
+            if i != "":
+                if "<" in i:
+                    k = i.split()
+                    m.append([float(k[0][:-1]), float(k[1])])
+                else:
+                    m.append(list(map(float, i.split())))
+        ep0 = m[0][0] - 1
+        pmin = 1
+        pmax = 30
+        wmin = 1 / pmax
+        wmax = 1 / pmin
+        step = 0.00001
+        def drob(n):
+            return n - math.floor(n)
+
+        p = []
+
+        def LK_Stat(a):
+            s1 = 0
+            srz = sum(map(lambda x: x[1], a)) / len(a)
+            for i in range(len(a)):
+                if i % 2 == 0:
+                    s1 += (a[i][1] - a[i - 1][1]) ** 16
+            s1 += (a[0][1] - a[-1][1]) ** 16
+            s1 = s1 / len(b)
+            s2 = 0
+            for i in range(len(a)):
+                s2 += (a[i][1] - srz) ** 2
+            s2 = (s2 / len(a)) ** 8
+            return s1 / s2
+        with open("C:\stars\регистрация звезд\звёзды\Minkovskiy 23\ztf r2.txt", "w") as f:
+            while wmin <= wmax:
+                b = []
+                for i in range(len(m)):
+                    b.append([drob((m[i][0] - ep0) * wmin), m[i][1]])
+                b = sorted(b, key=lambda x: x[0])
+                p.append([LK_Stat(b), 1 / wmin])
+                f.writelines(str(1 / wmin) + " " + str(LK_Stat(b)) + "\n")
+                wmin += step
+
+            p = sorted(p, key=lambda x: x[0])[:50]
+            print(p)
+            per_n = p[0][1]
+            for i in range(len(p)):
+                if p[i][0] < 0.001:
+                    if abs(per_n - 2 * p[i][1]) < 0.0001:
+                        per_n = p[i][1]
+            return round(per_n, 3)
+
+class OtherName:
+    def __init__(self, cor):
+        self.silka = "https://vizier.u-strasbg.fr/viz-bin/VizieR-4?-mime=html&-source=USNO-A2.0,GSC2.2,IPHAS,USNO-B1.0,GSC2.3,URAT1,2MASS,SDSS,WISE,II/335/galex_ais&-c="+cor+"&-c.rs=4"
+        self.other = []
+    def getname(self):
+        req = requests.get(self.silka)
+        a = req.text
+        a = a.split()
+        for i in range(len(a)):
+            if "urat1&amp" in a[i]:
+                if 'NOWRAP' in a[i+3]:
+                    self.other.append(["URAT1", a[i+3][7:17]])
+            if a[i].count("galex_ais")==1 and a[i+7] == "NOWRAP>GALEX" and "J" in a[i+8]:
+                self.other.append(["GALEX", a[i+8][:-5]])
+            if "===" in a[i] and "AllWISE" not in a[i]:
+                b = a[i].split(";")
+                b = re.split("===|&|'", b[3])
+                if "%2b" in b[1]:
+                    b[1] = r"{}+{}".format(*b[1].split("%2b"))
+                self.other.append([b[0], b[1]])
+        return self.other
+
+class ZTF_Points:
+    def __init__(self, coord, fiel_name, mag = True):#на вход координаты и путь куда будут сохраняться файлы / mag - если true то ищет магнитуду дополнительео выводит масив макс зн \мин зн\ фильтр
+        self.fiel_name = fiel_name #куда сохраняю файл
+        self.ssilka1 = "https://irsa.ipac.caltech.edu/cgi-bin/Gator/nph-query?spatial=box&catalog=ztf_objects_dr12&objstr={}h+{}m+{}s+{}d+{}m+{}s&size=10&outfmt=1".format(*coord.split())
+        #запрос к ztf из которого я получаю какие именно данные наблюдений мне нужно запрасить в дальнейшем
+        self.ssilka2 = "https://irsa.ipac.caltech.edu/cgi-bin/ZTF/nph_light_curves?ID={}"#запрос данных
+        self.mag = mag
+    def points(self):#
+        rec = requests.get(self.ssilka1)#делаю запрос по координатам
+        b = rec.text.split()
+        #т.к я делаю запрос по итогу которого мне могут выдать не те звезды то я беру центр своего запроса в градусах
+        for i in range(len(b)):
+            if "\SKYAREA" ==b[i]:
+                ra, dec = map(float, b[i+5][1:-1].split(","))#центр запроса. Нужен чтобы определить бижайшие звезды
+                b = b[i+369:]
+                break
+        name_g = []
+        name_r = []
+
+        for i in range(len(b)):
+            if i%23==0:
+                if ((float(b[i+1])-ra)**2+(float(b[i+2])-dec)**2)**0.5*3600 <1.5:#проверяю чтобы выбранные данные были ближе 1.5 арксек
+                    if b[i+8][1] =="g":#данные фильтра g
+                        name_g.append([b[i], int(b[i+12])])
+                    if b[i+8][1] == "r":#данные фильтра r
+                        name_r.append([b[i], int(b[i+12])])
+        ret = []#имена файлов которые я создал. В файлах содержатся данные конкретного фильтра
+        if name_g != []:
+            if self.mag:#
+                g_mag = [100, -100, "g"]
+            ret.append('ztf_g.txt')#записываю что сделал файл с наблюдениями в фильтре g
+            name_g = max(name_g, key=lambda x:x[1])[0]#выбираю тот набор в котором больше всего наблюдений
+            data = requests.get(self.ssilka2.format(name_g)).text.split()#получаю данные наблюдений
+            with open(self.fiel_name+"\ztf_g.txt", "w") as f:
+                for i in range(len(data)):
+                    if data[i] == "<TR>":
+                        f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
+                        if self.mag:
+                            if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0]:
+                                g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
+                            if float(re.split("<|>", data[i + 5])[2][:6]) > g_mag[1]:
+                                g_mag[0] = float(re.split("<|>", data[i + 5])[2][:6])
+
+        if name_r != []:
+            if self.mag:#
+                r_mag = [100, -100, "g"]
+            ret.append('ztf_r.txt')#записываю что сделал файл с наблюдениями в фильтре r
+            name_r = max(name_r, key=lambda x: x[1])[0]#выбираю тот набор в котором больше всего наблюдений
+            data = requests.get(self.ssilka2.format(name_r)).text.split()#получаю данные наблюдений
+            with open(self.fiel_name + "\ztf_r.txt", "w") as f:
+                for i in range(len(data)):
+                    if data[i] == "<TR>":
+                        f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
+                        if self.mag:
+                            if float(re.split("<|>", data[i + 5])[2][:6]) < r_mag[0]:
+                                r_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
+                            if float(re.split("<|>", data[i + 5])[2][:6]) > r_mag[1]:
+                                r_mag[0] = float(re.split("<|>", data[i + 5])[2][:6])
+        if self.mag:
+            if
+        return ret
+
+class makeGrapf:#создает график из данных файла. формат данных в фале 2 сторки. ось x ось у
     def __init__(self, path, savef, name, phase=False):
         self.path = path
-        self.name =name
+        self.name = name
         self.savef = savef
         self.phase = phase
     def make(self):
@@ -56,6 +201,7 @@ class makeGrapf:
         g.figure.set_figheight(8)
         pyp.ylim(ymax+0.5, ymin-0.5)
         if self.phase:
+            pyp.xlim(-0.5, 1)
             pyp.title(self.name, fontsize=23)
             pyp.ylabel("Magnitude", fontsize=18)
             pyp.xlabel("Phase", fontsize=18)
@@ -66,10 +212,8 @@ class makeGrapf:
         pyp.savefig(self.savef+"\ "[0]+self.name+".png")
         pyp.close()
 
-mak = makeGrapf(["C:\stars\регистрация звезд\звёзды\Minkovskiy 20\ztf g.txt", "C:\stars\регистрация звезд\звёзды\Minkovskiy 20\ztf r.txt"],
-                "C:\stars\регистрация звезд\звёзды\пробные периоды",
-                "popitka")
-mak.make()
+m =makeGrapf(["C:\stars\регистрация звезд\звёзды\Minkovskiy 23\ztf r2.txt"], "C:\stars\регистрация звезд\звёзды\пробные периоды", "LK_stat")
+m.make()
 
 class LightCurve:
     def __init__(self, per, path, on, by, epoch, filter, new_fiel, make = False):
@@ -82,7 +226,6 @@ class LightCurve:
         self.new_fiel = new_fiel
         self.make = make
     def make_epoch(self, ep):
-        print(ep)
         m = float(self.epoch)
         while True:
             s = (m - ep) / float(self.period)
@@ -103,7 +246,7 @@ class LightCurve:
                     if a[i]!= '':
                         f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
             if self.make:
-                g = makeGrapf([b], self.new_fiel, " ")
+                g = makeGrapf([b], self.new_fiel, "preview")
                 g.make()
         if self.by == "Atlass":
             o = self.new_fiel+'\ '[0]+self.by+'o.txt'
@@ -122,7 +265,7 @@ class LightCurve:
                                 if r[5] == "o":
                                     f1.writelines(r[0] +' '+ r[1]+'\n')
             if self.make:
-                g1 = makeGrapf([o1], self.new_fiel, " ")
+                g1 = makeGrapf([o1], self.new_fiel, "preview")
                 g1.make()
         else:
             pass
@@ -134,21 +277,40 @@ class LightCurve:
         if self.val_on == "Минимуме":
             min_ = [0, 0]
             if self.by == "ZTF":
-                for i in range(17, len(a)):
+                a = a[17:]
+                for i in range(len(a)):
                     if a[i] != '':
                         a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
                         if float(a[i][1]) > min_[1]:
                             min_ = [float(a[i][0]), float(a[i][1])]
                 correct_epoch = self.make_epoch(min_[0])
+            if self.by == "Other":
+                min_ = [0, 0]
+                for i in range(len(a)):
+                    if a[i]!= "":
+                        k = a[i].split()
+                        a[i] = [float(k[0]), k[1]]
+                        if float(a[i][1]) > float(min_[1]):
+                            min_ = a[i]
+                correct_epoch = self.make_epoch(float(min_[0]))
         else:
             max_ = [30, 30]
             if self.by == "ZTF":
-                for i in range(17, len(a)):
+                a = a[17:]
+                for i in range(len(a)):
                     if a[i] != '':
                         a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
                         if float(a[i][1]) < max_[1]:
                             max_ = [float(a[i][0]), float(a[i][1])]
                 correct_epoch = self.make_epoch(max_[0])
+            if self.by == "Other":
+                for i in range(len(a)):
+                    if a[i] != "":
+                        k = a[i].split()
+                        a[i] = [float(k[0]), k[1]]
+                        if float(a[i][1]) < float(max_[1]):
+                            max_ = a[i]
+                correct_epoch = self.make_epoch(float(max_[0]))
             if self.by == "Atlass":
                 for i in range(17, len(a)):
                     r = a[i].split()
@@ -174,20 +336,19 @@ class LightCurve:
                                 else:
                                     f1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
                                     f1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
-
-
-        if self.by != "Atlass":
+        if self.by != "Atlas":
             with open(b, "w") as f:
-                for i in range(17, len(a)):
+                for i in range(len(a)):
                     if a[i] != "":
                         rez = (float(a[i][0]) - correct_epoch) / float(self.period)
-                        rez_c = round(rez) - 1
+                        rez_c = math.floor(rez)
                         f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                        f.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
-            if self.make:
-                g = makeGrapf([b], self.new_fiel, " ")
-                g.make()
+                        f.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
+        if self.make:
+            g = makeGrapf([b], self.new_fiel, "preview", phase=True)
+            g.make()
         return correct_epoch
+
 
 class vari(QWidget):
     def __init__(self):
@@ -260,7 +421,24 @@ class errWind(QWidget):
     def ok(self):
         self.close()
 
-class Example(QWidget):
+class previewwin(QWidget):
+    def __init__(self, path):
+        super().__init__()
+        self.path = path
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(0, 0, 1220, 820)
+        self.setWindowTitle('График')
+        self.setStyleSheet('background: rgb(248, 248, 255);')
+
+        self.lab = QLabel(self)
+        self.lab.move(10, 10)
+        self.pi = QPixmap(self.path)
+        self.lab.setPixmap(self.pi)
+
+
+class OBRwin(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -316,6 +494,10 @@ class Example(QWidget):
         self.butn3.resize(100, 50)
         self.butn3.clicked.connect(self.dark)
 
+        self.butn4 = QPushButton("Preview", self)
+        self.butn4.setGeometry(1700, 200, 100, 50)
+        self.butn4.clicked.connect(self.preview)
+
         self.data_line= QLabel(self)
         self.data_line.setText("Данные от:")
         self.data_line.move(100, 200)
@@ -364,7 +546,6 @@ class Example(QWidget):
         self.make_grath.setText("Make grath")
     def claer(self):
         self.line_F_in.clear()
-        self.line_coord_in.clear()
         self.line_Epoch_in.clear()
         self.line_Per_in.clear()
 
@@ -429,6 +610,16 @@ class Example(QWidget):
             elif self.err_key == 3:
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
 
+    def preview(self):
+        a = self.make
+        self.make = True
+        self.count()
+        self.make = a
+        if self.err_key == 0:
+            a = self.name_per_fiel+"/"+"preview.png"
+            self.wp = previewwin(a)
+            self.wp.show()
+
 class registrWin(QWidget):
     def __init__(self):
         super().__init__()
@@ -437,6 +628,7 @@ class registrWin(QWidget):
         self.PANSTARRS_F = False
         with open("seting.txt") as f:
             self.path_star = f.readline().split("\n")[0]
+        self.key_err = 0
 
     def initUI(self):
         user = ctypes.windll.user32
@@ -453,141 +645,178 @@ class registrWin(QWidget):
         self.beak_btn.setText("Beak")
         self.beak_btn.setGeometry(1700, 150, 100, 50)
 
-        self.star_name = QLabel(self)
-        self.star_name.setText("Имя звезды")
-        self.star_name.move(100, 50)
-
-        self.star_name_in = QLineEdit(self)
-        self.star_name_in.setGeometry(300, 50, 100, 25)
-        self.star_name_in.setMaxLength(25)
-
-        self.min_mag = QLabel(self)
-        self.min_mag.setText("Минимальная магнитуда")
-        self.min_mag.move(100, 300)
-
-        self.min_mag_in = QLineEdit(self)
-        self.min_mag_in.setGeometry(300, 300, 100, 25)
-
-        self.min_mag_filter = QComboBox(self)
-        self.min_mag_filter.addItems(["g", "r", "o", "c","i", "y", "z"])
-        self.min_mag_filter.setGeometry(410, 300, 100, 25)
-
-        self.max_mag = QLabel(self)
-        self.max_mag.setText("Максимальная магнитуда")
-        self.max_mag.move(100, 250)
-
-        self.max_mag_in = QLineEdit(self)
-        self.max_mag_in.setGeometry(300, 250, 100, 25)
-
-        self.max_mag_filter = QComboBox(self)
-        self.max_mag_filter.addItems(["g", "r", "o", "c", "i", "y", "z"])
-        self.max_mag_filter.setGeometry(410, 250, 100, 25)
-
-        self.coor_line = QLabel(self)
-        self.coor_line.setText("Координаты")
-        self.coor_line.move(100, 100)
-
-        self.coor_line_in = QLineEdit(self)
-        self.coor_line_in.setGeometry(300, 100, 100, 25)
-        self.coor_line_in.setMaxLength(20)
+        self.clear_btn = QPushButton(self)
+        self.clear_btn.setGeometry(1700, 50, 100, 50)
+        self.clear_btn.setText("Clear")
+        self.clear_btn.clicked.connect(self.clear_line)
 
         self.file_btn = QPushButton(self)
         self.file_btn.setText("Create file")
         self.file_btn.clicked.connect(self.create_file)
         self.file_btn.setGeometry(800, 500, 100, 50)
 
-        self.clear_btn = QPushButton(self)
-        self.clear_btn.setGeometry(1700, 50, 100, 50)
-        self.clear_btn.setText("Clear")
-        self.clear_btn.clicked.connect(self.clear_line)
+        self.star_name = QLabel(self)
+        self.star_name.setText("Имя звезды")
+        self.star_name.move(100, 50)
 
-        self.comm_line = QLabel(self)
-        self.comm_line.setText("Revizion comment")
-        self.comm_line.move(100, 550)
+        self.star_name_in = QLineEdit(self)
+        self.star_name_in.setGeometry(300, 50, 200, 25)
+        self.star_name_in.setMaxLength(25)
 
-        self.comm_line_in = QLineEdit(self)
-        self.comm_line_in.setGeometry(300, 550, 100, 25)
-        self.comm_line_in.setText("GaiaEDR3 position.")
+        self.coor_line = QLabel(self)
+        self.coor_line.setText("Координаты")
+        self.coor_line.move(100, 100)
 
-        self.ztf_rem = QLabel(self)
-        self.ztf_rem.setText("ZTF Remark")
-        self.ztf_rem.move(100, 500)
-
-        self.ztf_rem_ok = QCheckBox(self)
-        self.ztf_rem_ok.move(200, 500)
-        self.ztf_rem_ok.toggle()
-        self.ztf_rem_ok.clicked.connect(self.ZTF)
-
-        self.panstarrs_rem = QLabel(self)
-        self.panstarrs_rem.setText("PanSTARRS Remark")
-        self.panstarrs_rem.move(250, 500)
-
-        self.panstarrs_rem_ok = QCheckBox(self)
-        self.panstarrs_rem_ok.move(400, 500)
-        self.panstarrs_rem_ok.clicked.connect(self.PanStarrs)
+        self.coor_line_in = QLineEdit(self)
+        self.coor_line_in.setGeometry(300, 100, 200, 25)
+        self.coor_line_in.setMaxLength(30)
 
         self.oth_name = QLabel(self)
         self.oth_name.setText("Другие имена")
         self.oth_name.move(100, 150)
 
-        self.oth_name_in = QLineEdit(self)
-        self.oth_name_in.move(300, 150)
+        self.oth_name_in = QPlainTextEdit(self)
+        self.oth_name_in.setGeometry(300, 150, 200, 225)
 
         self.type_line = QLabel(self)
         self.type_line.setText("Тип")
-        self.type_line.move(100, 200)
+        self.type_line.move(100, 400)
 
         self.type_line_in_n = QLineEdit(self)
-        self.type_line_in_n.setGeometry(300, 200, 100, 25)
+        self.type_line_in_n.setGeometry(300, 400, 200, 25)
 
         self.type_line_in = QComboBox(self)
         self.type_line_in.addItems(["EA","EB","EW", "UG", "UGSU", "UGSS", "RR", "RS", "M", "BY", "RRC", "RRB", "L"])
-        self.type_line_in.move(150, 200)
+        self.type_line_in.move(150, 400)
+
+        self.max_mag = QLabel(self)
+        self.max_mag.setText("Максимальная магнитуда")
+        self.max_mag.move(100, 450)
+
+        self.max_mag_in = QLineEdit(self)
+        self.max_mag_in.setGeometry(300, 450, 100, 25)
+
+        self.max_mag_filter = QComboBox(self)
+        self.max_mag_filter.addItems(["g", "r", "o", "c", "i", "y", "z"])
+        self.max_mag_filter.setGeometry(400, 450, 100, 25)
+
+        self.min_mag = QLabel(self)
+        self.min_mag.setText("Минимальная магнитуда")
+        self.min_mag.move(100, 500)
+
+        self.min_mag_in = QLineEdit(self)
+        self.min_mag_in.setGeometry(300, 500, 100, 25)
+
+        self.min_mag_filter = QComboBox(self)
+        self.min_mag_filter.addItems(["g", "r", "o", "c","i", "y", "z"])
+        self.min_mag_filter.setGeometry(400, 500, 100, 25)
 
         self.per_line = QLabel(self)
         self.per_line.setText("Период:")
-        self.per_line.move(100, 350)
+        self.per_line.move(100, 550)
 
         self.per_line_in = QLineEdit(self)
-        self.per_line_in.setGeometry(300, 350, 100, 25)
+        self.per_line_in.setGeometry(300, 550, 200, 25)
 
         self.Epoch_line = QLabel(self)
         self.Epoch_line.setText("Эпоха (MGD):")
-        self.Epoch_line.move(100, 400)
+        self.Epoch_line.move(100, 600)
 
         self.Epoch_line_in = QLineEdit(self)
-        self.Epoch_line_in.setGeometry(300, 400, 100, 25)
+        self.Epoch_line_in.setGeometry(300, 600, 200, 25)
 
         self.eclipse_line = QLabel(self)
-        self.eclipse_line.move(100, 450)
+        self.eclipse_line.move(100, 650)
         self.eclipse_line.setText("% затмения")
 
         self.eclipse_line_in = QLineEdit(self)
-        self.eclipse_line_in.setGeometry(300, 450, 100, 25)
+        self.eclipse_line_in.setGeometry(300, 650, 200, 25)
+
+        self.ztf_rem = QLabel(self)
+        self.ztf_rem.setText("ZTF Remark")
+        self.ztf_rem.move(100, 700)
+
+        self.ztf_rem_ok = QCheckBox(self)
+        self.ztf_rem_ok.move(250, 700)
+        self.ztf_rem_ok.toggle()
+        self.ztf_rem_ok.clicked.connect(self.ZTF)
+
+        self.panstarrs_rem = QLabel(self)
+        self.panstarrs_rem.setText("PanSTARRS Remark")
+        self.panstarrs_rem.move(310, 700)
+
+        self.panstarrs_rem_ok = QCheckBox(self)
+        self.panstarrs_rem_ok.move(485, 700)
+        self.panstarrs_rem_ok.clicked.connect(self.PanStarrs)
+
+        self.comm_line = QLabel(self)
+        self.comm_line.setText("Revizion comment")
+        self.comm_line.move(100, 750)
+
+        self.comm_line_in = QPlainTextEdit(self)
+        self.comm_line_in.setGeometry(300, 750, 200, 225)
+        self.comm_line_in.setPlainText("GaiaEDR3 position.")
 
     def dark(self):
         if self.dark_btn.text() == "Dark":
             self.dark_btn.setText("White")
             self.setStyleSheet(setstell1)
+            if self.key_err == 1:
+                self.star_name_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+                self.coor_line_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
+            if self.key_err == 2:
+                self.star_name_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
+                self.coor_line_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
         else:
             self.dark_btn.setText("Dark")
             self.setStyleSheet('background: rgb(248, 248, 255);')
+            if self.key_err == 1:
+                self.star_name_in.setStyleSheet("background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)")
+                self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255)")
+            if self.key_err == 2:
+                self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)")
+                self.star_name_in.setStyleSheet("background: rgb(248, 248, 255)")
 
     def create_file(self):
-        if self.star_name_in.text() == "":
+        if self.star_name_in.text() == "" or self.star_name_in.text() == "Обязательное поле":
             self.star_name_in.setText("Обязательное поле")
+            if self.key_err == 2:
+                self.coor_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.key_err =1
+            self.star_name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+        elif self.coor_line_in.text() == "" or self.coor_line_in.text() == "Обязательное поле":
+            self.coor_line_in.setText("Обязательное поле")
+            if self.key_err == 1:
+                self.star_name_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.key_err =2
+            self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
         else:
             stn = self.star_name_in.text()
             p = self.path_star + "\ "[0] +stn
+
+            if self.oth_name_in.toPlainText() == "":
+                o = OtherName(self.coor_line_in.text())
+                a = o.getname()
+                stroka_oth_name = ""
+                for i in range(len(a)):
+                    stroka_oth_name += a[i][0]+"   "+ a[i][1] + "\n"
+                self.oth_name_in.setPlainText(stroka_oth_name)
             try:
                 makedirs(p)
             except:
                 pass
+
+            ztf = ZTF_Points(self.coor_line_in.text(), p)
+            z = ztf.points()
+
+            if self.per_line_in.text() == "" and self.type_line_in.currentText() == "M" or self.type_line_in.currentText() == "EA":
+                self.per_line_in.setText(str(round(Lafler_clinman(p+"\ "[0]+z[0]), 5)))
+
             p = p+"\ "[0] + stn + ".txt"
             with open(p, "w") as f:
                 f.writelines("Name: " + self.star_name_in.text() + "\n" +"\n")
                 f.writelines("Coordinates: " + self.coor_line_in.text()+ "\n" + "\n")
-                f.writelines("Other name: " + "\n" + '\n')
+                f.writelines("Other name: " +"\n"+self.oth_name_in.toPlainText() + '\n')
                 f.writelines("Min. mag: " + self.min_mag_in.text() +" "+ self.min_mag_filter.currentText()+"\n")
                 f.writelines("Max. mag: " + self.max_mag_in.text() +" "+ self.max_mag_filter.currentText()+"\n"+"\n")
                 if self.type_line_in_n.text() != "":
@@ -605,7 +834,7 @@ class registrWin(QWidget):
                     f.writelines(
                         "Chambers, K. C.; et al., 2016, The Pan-STARRS1 Surveys." + "\n")
                     f.writelines("2016arxiv161205560C" + "\n" + "\n")
-                f.writelines("Revision:"+ "\n"+self.comm_line_in.text())
+                f.writelines("Revision:"+ "\n"+self.comm_line_in.toPlainText())
 
     def clear_line(self):
         self.coor_line_in.clear()
@@ -615,7 +844,7 @@ class registrWin(QWidget):
         self.eclipse_line_in.clear()
         self.oth_name_in.clear()
         self.type_line_in_n.clear()
-        self.comm_line_in.setText("GaiaEDR3 position.")
+        self.comm_line_in.setPlainText("GaiaEDR3 position.")
         self.per_line_in.clear()
         self.Epoch_line_in.clear()
 
@@ -671,7 +900,7 @@ class win2(QMainWindow):
         self.wi1.btn_Reg.clicked.connect(self.w3)
     def w2(self):
         self.wi1.close()
-        self.wi2 = Example()
+        self.wi2 = OBRwin()
         self.wi2.show()
         self.wi2.beak_btn.clicked.connect(self.beak)
     def w3(self):
