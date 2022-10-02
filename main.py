@@ -38,56 +38,43 @@ color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(2
 
 def Lafler_clinman(name):
     with open(name) as f:
+        ma = 32
+        ep0 = 0
         m = []
         for i in f:
-            if i != "":
-                if "<" in i:
-                    k = i.split()
-                    m.append([float(k[0][:-1]), float(k[1])])
-                else:
-                    m.append(list(map(float, i.split())))
-        ep0 = m[0][0] - 1
+            m.append(list(map(float, i.split())))
+            if m[-1][1] < ma:
+                ma = m[-1][1]
+                ep0 = m[-1][0]
         pmin = 1
-        pmax = 30
+        pmax = 1000
         wmin = 1 / pmax
         wmax = 1 / pmin
         step = 0.00001
+
         def drob(n):
             return n - math.floor(n)
 
         p = []
 
-        def LK_Stat(a):
-            s1 = 0
-            srz = sum(map(lambda x: x[1], a)) / len(a)
+        def LK1(a):
+            s = 0
             for i in range(len(a)):
-                if i % 2 == 0:
-                    s1 += (a[i][1] - a[i - 1][1]) ** 16
-            s1 += (a[0][1] - a[-1][1]) ** 16
-            s1 = s1 / len(b)
-            s2 = 0
-            for i in range(len(a)):
-                s2 += (a[i][1] - srz) ** 2
-            s2 = (s2 / len(a)) ** 8
-            return s1 / s2
-        with open("C:\stars\регистрация звезд\звёзды\Minkovskiy 23\ztf r2.txt", "w") as f:
-            while wmin <= wmax:
-                b = []
-                for i in range(len(m)):
-                    b.append([drob((m[i][0] - ep0) * wmin), m[i][1]])
-                b = sorted(b, key=lambda x: x[0])
-                p.append([LK_Stat(b), 1 / wmin])
-                f.writelines(str(1 / wmin) + " " + str(LK_Stat(b)) + "\n")
-                wmin += step
+                s += (a[i][1] - a[i - 1][1]) ** 2
+            return s
 
-            p = sorted(p, key=lambda x: x[0])[:50]
-            print(p)
-            per_n = p[0][1]
-            for i in range(len(p)):
-                if p[i][0] < 0.001:
-                    if abs(per_n - 2 * p[i][1]) < 0.0001:
-                        per_n = p[i][1]
-            return round(per_n, 3)
+        while wmin <= wmax:
+            b = []
+            for i in range(len(m)):
+                b.append([drob((m[i][0] - ep0) * wmin), m[i][1]])
+            b = sorted(b, key=lambda x: x[0])
+            p.append([LK1(b), 1 / wmin])
+            wmin += step
+
+        p = sorted(p, key=lambda x: x[0])
+        print(p[:25])
+        per_n = p[0][1]
+    return round(per_n, 7), ep0
 
 class OtherName:
     def __init__(self, cor):
@@ -170,11 +157,11 @@ class ZTF_Points:
                             if float(re.split("<|>", data[i + 5])[2][:6]) > r_mag[1]:
                                 r_mag[0] = float(re.split("<|>", data[i + 5])[2][:6])
         if self.mag:
-            if
+            pass
         return ret
 
 class makeGrapf:#создает график из данных файла. формат данных в фале 2 сторки. ось x ось у
-    def __init__(self, path, savef, name, phase=False):
+    def __init__(self, path, savef, name, phase=False):#массив с путями к файлам\куда сохранять\название сохраняемого файла\фазовый или обычный график
         self.path = path
         self.name = name
         self.savef = savef
@@ -212,11 +199,10 @@ class makeGrapf:#создает график из данных файла. фо�
         pyp.savefig(self.savef+"\ "[0]+self.name+".png")
         pyp.close()
 
-m =makeGrapf(["C:\stars\регистрация звезд\звёзды\Minkovskiy 23\ztf r2.txt"], "C:\stars\регистрация звезд\звёзды\пробные периоды", "LK_stat")
-m.make()
 
 class LightCurve:
     def __init__(self, per, path, on, by, epoch, filter, new_fiel, make = False):
+        #период\путь к файлу\где должен быть 0 фазы в макс или мин знач\от кого данные\эпоха\какой фильтр\куда сохранять новый файл\ делать график или нет
         self.period = per
         self.path = path
         self.val_on = on
@@ -791,6 +777,9 @@ class registrWin(QWidget):
             self.key_err =2
             self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
         else:
+            mp = ["M", "SR"]
+            mip = ["EA"]
+
             stn = self.star_name_in.text()
             p = self.path_star + "\ "[0] +stn
 
@@ -809,11 +798,34 @@ class registrWin(QWidget):
             ztf = ZTF_Points(self.coor_line_in.text(), p)
             z = ztf.points()
 
-            if self.per_line_in.text() == "" and self.type_line_in.currentText() == "M" or self.type_line_in.currentText() == "EA":
-                self.per_line_in.setText(str(round(Lafler_clinman(p+"\ "[0]+z[0]), 5)))
+            if self.per_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
+                per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
+                self.per_line_in.setText(per)
+                self.Epoch_line_in.setText(ep)
 
-            p = p+"\ "[0] + stn + ".txt"
-            with open(p, "w") as f:
+            if z != []:
+                m = []
+                for i in range(len(z)):
+                    if self.type_line_in.currentText() in mp:
+                        l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Максимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
+                        print(l.make_LightCurve_with_per())
+                        m.append(p+"\ "[0]+"Other"+z[i][4]+"P.txt")
+                    elif self.type_line_in.currentText() in mip:
+                        l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Минимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
+                        print(l.make_LightCurve_with_per())
+                        m.append(p + "\ "[0] + "Other" + z[i][4] + "P.txt")
+                    else:
+                        m.append(p+"\ "[0]+z[i])
+                if self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip:
+                    gr =makeGrapf(m, p, self.star_name_in.text(), True)
+                    gr.make()
+                else:
+                    gr = makeGrapf(m, p, self.star_name_in.text())
+                    gr.make()
+
+
+            p1 = p+"\ "[0] + stn + ".txt"
+            with open(p1, "w") as f:
                 f.writelines("Name: " + self.star_name_in.text() + "\n" +"\n")
                 f.writelines("Coordinates: " + self.coor_line_in.text()+ "\n" + "\n")
                 f.writelines("Other name: " +"\n"+self.oth_name_in.toPlainText() + '\n')
