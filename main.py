@@ -36,14 +36,21 @@ color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(2
 }
 '''
 
-def Lafler_clinman(name):
+
+def Lafler_clinman(name, max = True):
     with open(name) as f:
-        ma = 32
+        if max:
+            ma = 32
+        else:
+            ma = -32
         ep0 = 0
         m = []
         for i in f:
             m.append(list(map(float, i.split())))
-            if m[-1][1] < ma:
+            if m[-1][1] < ma and max:
+                ma = m[-1][1]
+                ep0 = m[-1][0]
+            elif m[-1][1] > ma and not(max):
                 ma = m[-1][1]
                 ep0 = m[-1][0]
         pmin = 1
@@ -72,7 +79,6 @@ def Lafler_clinman(name):
             wmin += step
 
         p = sorted(p, key=lambda x: x[0])
-        print(p[:25])
         per_n = p[0][1]
     return round(per_n, 7), ep0
 
@@ -125,6 +131,8 @@ class ZTF_Points:
                     if b[i+8][1] == "r":#данные фильтра r
                         name_r.append([b[i], int(b[i+12])])
         ret = []#имена файлов которые я создал. В файлах содержатся данные конкретного фильтра
+        if self.mag:
+            magn = []
         if name_g != []:
             if self.mag:#
                 g_mag = [100, -100, "g"]
@@ -136,14 +144,16 @@ class ZTF_Points:
                     if data[i] == "<TR>":
                         f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
                         if self.mag:
-                            if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0]:
-                                g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
-                            if float(re.split("<|>", data[i + 5])[2][:6]) > g_mag[1]:
-                                g_mag[0] = float(re.split("<|>", data[i + 5])[2][:6])
+                            if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0] and len(data[i + 7])<11:
+                                g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])#код ошибки наблюдений на i+7
+                            if float(re.split("<|>", data[i + 5])[2][:6]) > g_mag[1] and len(data[i + 7])<11:
+                                g_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
+            if self.mag:
+                magn.append(g_mag)
 
         if name_r != []:
             if self.mag:#
-                r_mag = [100, -100, "g"]
+                r_mag = [100, -100, "r"]
             ret.append('ztf_r.txt')#записываю что сделал файл с наблюдениями в фильтре r
             name_r = max(name_r, key=lambda x: x[1])[0]#выбираю тот набор в котором больше всего наблюдений
             data = requests.get(self.ssilka2.format(name_r)).text.split()#получаю данные наблюдений
@@ -152,12 +162,15 @@ class ZTF_Points:
                     if data[i] == "<TR>":
                         f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
                         if self.mag:
-                            if float(re.split("<|>", data[i + 5])[2][:6]) < r_mag[0]:
+                            if float(re.split("<|>", data[i + 5])[2][:6]) < r_mag[0] and len(data[i + 7])<11:
                                 r_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
-                            if float(re.split("<|>", data[i + 5])[2][:6]) > r_mag[1]:
-                                r_mag[0] = float(re.split("<|>", data[i + 5])[2][:6])
+                            if float(re.split("<|>", data[i + 5])[2][:6]) > r_mag[1] and len(data[i + 7])<11:
+                                r_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
+            if self.mag:
+                magn.append(r_mag)
         if self.mag:
-            pass
+            print(magn)
+            print(max(magn, key=lambda x: abs(x[0]- x[1])))
         return ret
 
 class makeGrapf:#создает график из данных файла. формат данных в фале 2 сторки. ось x ось у
@@ -254,8 +267,16 @@ class LightCurve:
                 g1 = makeGrapf([o1], self.new_fiel, "preview")
                 g1.make()
         else:
-            pass
-    def  make_LightCurve_with_per(self):
+            c = self.new_fiel + "\ "[0] + self.by + self.filter + ".txt"
+            b = c
+            with open(b, "w") as f:
+                for i in range(17, len(a)):
+                    if a[i] != '':
+                        f.writelines(a[i].split()[0] + " " + a[i].split()[1] + "\n")
+            if self.make:
+                g = makeGrapf([b], self.new_fiel, "preview")
+                g.make()
+    def  make_LightCurve_with_per(self, fep = True):
         with open(self.path) as f:
             a = f.read().split("\n")
         c = self.new_fiel + "\ "[0] + self.by + self.filter + "P.txt"
@@ -269,7 +290,11 @@ class LightCurve:
                         a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
                         if float(a[i][1]) > min_[1]:
                             min_ = [float(a[i][0]), float(a[i][1])]
-                correct_epoch = self.make_epoch(min_[0])
+                if fep:
+                    correct_epoch = self.make_epoch(min_[0])
+                else:
+                    correct_epoch = float(self.epoch)
+
             if self.by == "Other":
                 min_ = [0, 0]
                 for i in range(len(a)):
@@ -278,7 +303,10 @@ class LightCurve:
                         a[i] = [float(k[0]), k[1]]
                         if float(a[i][1]) > float(min_[1]):
                             min_ = a[i]
-                correct_epoch = self.make_epoch(float(min_[0]))
+                if fep:
+                    correct_epoch = self.make_epoch(float(min_[0]))
+                else:
+                    correct_epoch = float(self.epoch)
         else:
             max_ = [30, 30]
             if self.by == "ZTF":
@@ -288,7 +316,11 @@ class LightCurve:
                         a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
                         if float(a[i][1]) < max_[1]:
                             max_ = [float(a[i][0]), float(a[i][1])]
-                correct_epoch = self.make_epoch(max_[0])
+                if fep:
+                    correct_epoch = self.make_epoch(max_[0])
+                else:
+                    correct_epoch = float(self.epoch)
+
             if self.by == "Other":
                 for i in range(len(a)):
                     if a[i] != "":
@@ -296,7 +328,10 @@ class LightCurve:
                         a[i] = [float(k[0]), k[1]]
                         if float(a[i][1]) < float(max_[1]):
                             max_ = a[i]
-                correct_epoch = self.make_epoch(float(max_[0]))
+                if fep:
+                    correct_epoch = self.make_epoch(float(max_[0]))
+                else:
+                    correct_epoch = float(self.epoch)
             if self.by == "Atlass":
                 for i in range(17, len(a)):
                     r = a[i].split()
@@ -304,7 +339,10 @@ class LightCurve:
                         a[i] = [r[0], r[1], r[5]]
                         if float(a[i][1]) < max_[1]:
                             max_ = [float(a[i][0]), float(a[i][1])]
-                correct_epoch = self.make_epoch(max_[0])
+                if fep:
+                    correct_epoch = self.make_epoch(max_[0])
+                else:
+                    correct_epoch = float(self.epoch)
 
                 ft1= self.new_fiel + "\ "[0] + self.by + "oP.txt"
                 ft2 = self.new_fiel + "\ "[0] + self.by + "cP.txt"
@@ -330,6 +368,7 @@ class LightCurve:
                         rez_c = math.floor(rez)
                         f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
                         f.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
+
         if self.make:
             g = makeGrapf([b], self.new_fiel, "preview", phase=True)
             g.make()
@@ -534,6 +573,7 @@ class OBRwin(QWidget):
         self.line_F_in.clear()
         self.line_Epoch_in.clear()
         self.line_Per_in.clear()
+        self.val_Ep_in.clear()
 
     def make_g(self):
         if self.make:
@@ -795,24 +835,23 @@ class registrWin(QWidget):
             except:
                 pass
 
-            ztf = ZTF_Points(self.coor_line_in.text(), p)
+            ztf = ZTF_Points(self.coor_line_in.text(), p, True)
             z = ztf.points()
 
             if self.per_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
                 per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
                 self.per_line_in.setText(per)
                 self.Epoch_line_in.setText(ep)
-
             if z != []:
                 m = []
                 for i in range(len(z)):
                     if self.type_line_in.currentText() in mp:
                         l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Максимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
-                        print(l.make_LightCurve_with_per())
+                        print(l.make_LightCurve_with_per(False))
                         m.append(p+"\ "[0]+"Other"+z[i][4]+"P.txt")
                     elif self.type_line_in.currentText() in mip:
                         l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Минимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
-                        print(l.make_LightCurve_with_per())
+                        print(l.make_LightCurve_with_per(False))
                         m.append(p + "\ "[0] + "Other" + z[i][4] + "P.txt")
                     else:
                         m.append(p+"\ "[0]+z[i])
