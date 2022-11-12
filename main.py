@@ -144,8 +144,8 @@ class ZTF_Points:
                     if data[i] == "<TR>":
                         f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
                         if self.mag:
-                            if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0] and len(data[i + 7])<11:
-                                g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])#код ошибки наблюдений на i+7
+                            if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0] and len(data[i + 7])<11:#код ошибки наблюдений на i+7
+                                g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
                             if float(re.split("<|>", data[i + 5])[2][:6]) > g_mag[1] and len(data[i + 7])<11:
                                 g_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
             if self.mag:
@@ -169,8 +169,7 @@ class ZTF_Points:
             if self.mag:
                 magn.append(r_mag)
         if self.mag:
-            print(magn)
-            print(max(magn, key=lambda x: abs(x[0]- x[1])))
+            return ret ,max(magn, key=lambda x: abs(x[0]- x[1]))
         return ret
 
 class makeGrapf:#создает график из данных файла. формат данных в фале 2 сторки. ось x ось у
@@ -835,8 +834,16 @@ class registrWin(QWidget):
             except:
                 pass
 
-            ztf = ZTF_Points(self.coor_line_in.text(), p, True)
-            z = ztf.points()
+            if self.min_mag_in.text() == "" or self.max_mag_in.text() == "":
+                ztf = ZTF_Points(self.coor_line_in.text(), p, True)
+                z,mag = ztf.points()
+                self.max_mag_in.setText(str(round(mag[0], 1)))
+                self.max_mag_filter.setCurrentText(mag[2])
+                self.min_mag_in.setText(str(round(mag[1], 1)))
+                self.min_mag_filter.setCurrentText(mag[2])
+            else:
+                ztf = ZTF_Points(self.coor_line_in.text(), p, False)
+                z = ztf.points()
 
             if self.per_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
                 per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
@@ -847,11 +854,11 @@ class registrWin(QWidget):
                 for i in range(len(z)):
                     if self.type_line_in.currentText() in mp:
                         l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Максимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
-                        print(l.make_LightCurve_with_per(False))
+                        l.make_LightCurve_with_per(False)
                         m.append(p+"\ "[0]+"Other"+z[i][4]+"P.txt")
                     elif self.type_line_in.currentText() in mip:
                         l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Минимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
-                        print(l.make_LightCurve_with_per(False))
+                        l.make_LightCurve_with_per(False)
                         m.append(p + "\ "[0] + "Other" + z[i][4] + "P.txt")
                     else:
                         m.append(p+"\ "[0]+z[i])
