@@ -1,15 +1,19 @@
 import sys, ctypes,math
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox,QMainWindow
-from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox, QPlainTextEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox, QMainWindow, QGridLayout, QSizePolicy
+from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox, QPlainTextEdit, QFileDialog
 from PyQt5.QtGui import QPixmap
 import seaborn as sns
 import matplotlib.pyplot as pyp
+import pandas as pn
 from PyQt5.QtCore import pyqtSignal, QObject
 from random import randrange
 import os
 from os import makedirs
 import requests
 import re
+import csv
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+from astropy.io import fits
 
 
 setstell1= '''
@@ -181,21 +185,26 @@ class makeGrapf:#создает график из данных файла. фо�
     def make(self):
         ymin = 99
         ymax = 0
-        for i in range(len(self.path)):
-            x = []
-            y = []
-            with open(self.path[i]) as f:
-                for i in f:
-                    x.append(float(i.split()[0]))
-                    y.append(float(i.split()[1]))
-            g = sns.scatterplot(x, y)
-            mi, ma = min(y), max(y)
-            if mi < ymin:
-                ymin = mi
-            if ma > ymax:
-                ymax = ma
-        sns.set_style("ticks")
-        sns.color_palette('dark')
+        with open(self.savef+"\data.csv", "w") as fi:
+            fiel = csv.writer(fi)
+            fiel.writerow(["x", "y", "data"])
+            for i in range(len(self.path)):
+                x = []
+                y = []
+                fil = self.path[i][1]
+                with open(self.path[i][0]) as f:
+                    for i in f:
+                        x.append(float(i.split()[0]))
+                        y.append(float(i.split()[1]))
+                        fiel.writerow([str(i.split()[0]), str(i.split()[1]), fil])
+                mi, ma = min(y), max(y)
+                if mi < ymin:
+                    ymin = mi
+                if ma > ymax:
+                    ymax = ma
+            data = pn.read_csv(self.savef+"\data.csv")
+            color = dict({"r":"#f80000", "g":"#000080", "c" : "#40734f",  "o":"#f5770a"})
+            g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
         g.figure.set_figheight(8)
         pyp.ylim(ymax+0.5, ymin-0.5)
@@ -237,14 +246,13 @@ class LightCurve:
         with open(self.path) as f:
             a = f.read().split("\n")
         if self.by ==  "ZTF":
-            c = self.new_fiel + "\ "[0] +self.by+self.filter+".txt"
-            b = c
+            b = self.new_fiel + "\ "[0] +self.by+self.filter+".txt"
             with open(b, "w") as f:
                 for i in range(17, len(a)):
                     if a[i]!= '':
                         f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
             if self.make:
-                g = makeGrapf([b], self.new_fiel, "preview")
+                g = makeGrapf([[b, self.filter]], self.new_fiel, "preview")
                 g.make()
         if self.by == "Atlass":
             o = self.new_fiel+'\ '[0]+self.by+'o.txt'
@@ -256,16 +264,15 @@ class LightCurve:
                     for i in range(1, len(a)):
                         if a[i] != '':
                             r = a[i].split()
-                            print(r[1])
                             if '-' not in r[1] and len(r[3]) <6:
                                 if r[5] == 'c':
                                     f2.writelines(r[0] +' '+ r[1]+'\n')
                                 if r[5] == "o":
                                     f1.writelines(r[0] +' '+ r[1]+'\n')
             if self.make:
-                g1 = makeGrapf([o1], self.new_fiel, "preview")
+                g1 = makeGrapf([[o1, "o"],[c1, "c"]], self.new_fiel, "preview")
                 g1.make()
-        else:
+        if self.by == "Other":
             c = self.new_fiel + "\ "[0] + self.by + self.filter + ".txt"
             b = c
             with open(b, "w") as f:
@@ -273,7 +280,7 @@ class LightCurve:
                     if a[i] != '':
                         f.writelines(a[i].split()[0] + " " + a[i].split()[1] + "\n")
             if self.make:
-                g = makeGrapf([b], self.new_fiel, "preview")
+                g = makeGrapf([[b, self.filter]], self.new_fiel, "preview")
                 g.make()
     def  make_LightCurve_with_per(self, fep = True):
         with open(self.path) as f:
@@ -369,33 +376,48 @@ class LightCurve:
                         f.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
 
         if self.make:
-            g = makeGrapf([b], self.new_fiel, "preview", phase=True)
+            g = makeGrapf([[b, self.filter]], self.new_fiel, "preview", phase=True)
             g.make()
         return correct_epoch
 
+def is_foat(a):
+    if a.count(".")>1:
+        return False
+    a =a.split(".")
+    if len(a)==1:
+        return a[0].isdigit()
+    return a[0].isdigit() and a[1].isdigit()
 
 class vari(QWidget):
     def __init__(self):
         super().__init__()
+        self.layoutGrid = QGridLayout()
+        self.setLayout(self.layoutGrid)
         self.initUI()
 
     def initUI(self):
         user = ctypes.windll.user32
-        self.setGeometry(user.GetSystemMetrics(0)//2-250, user.GetSystemMetrics(1)//2-200, 500, 400)
+        self.setGeometry(user.GetSystemMetrics(0)//2-250, user.GetSystemMetrics(1)//2-200, 725, 400)
         self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setMinimumSize(725, 400)
 
         self.btn_Reg = QPushButton(self)
         self.btn_Reg.setText("REGISTR")
         self.btn_Reg.setGeometry(50, 50, 175, 300)
 
         self.btn_OBR = QPushButton(self)
-        self.btn_OBR.setText("OBR")
+        self.btn_OBR.setText("Fiel")
         self.btn_OBR.setGeometry(275, 50, 175, 300)
+
+        self.plate_OBR = QPushButton(self)
+        self.plate_OBR.setText("Plates")
+        self.plate_OBR.setGeometry(500, 50, 175, 300)
 
 class setting(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.successfully =False
 
     def initUI(self):
         self.setGeometry(600, 200, 700, 600)
@@ -407,26 +429,101 @@ class setting(QWidget):
         self.Fiel_line.move(100, 50)
 
         self.Fiel_line_in = QLineEdit(self)
-        self.Fiel_line_in.move(100, 75)
+        self.Fiel_line_in.setGeometry(100, 75, 200, 25)
         self.Fiel_line_in.setMaxLength(50)
+
+        self.Fiel_line_choice = QPushButton(self)
+        self.Fiel_line_choice.setGeometry(300, 75, 50, 25)
+        self.Fiel_line_choice.setText("Select")
+        self.Fiel_line_choice.clicked.connect(self.file_choice)
 
         self.star_line = QLabel(self)
         self.star_line.setText("Set path form star fiel:")
         self.star_line.move(100, 150)
 
         self.star_line_in = QLineEdit(self)
-        self.star_line_in.move(100, 175)
+        self.star_line_in.setGeometry(100, 175, 200, 25)
         self.star_line_in.setMaxLength(50)
+
+        self.star_line_choice = QPushButton(self)
+        self.star_line_choice.setGeometry(300, 175, 50, 25)
+        self.star_line_choice.setText("Select")
+        self.star_line_choice.clicked.connect(self.star_choice)
+
+        self.min_period_text = QLabel(self)
+        self.min_period_text.setGeometry(100, 250, 75, 25)
+        self.min_period_text.setText("Min period:")
+
+        self.min_period_in = QLineEdit(self)
+        self.min_period_in.setGeometry(175, 250, 100, 25)
+        self.min_period_in.setText("1")
+
+        self.max_period_text = QLabel(self)
+        self.max_period_text.setGeometry(300, 250, 75, 25)
+        self.max_period_text.setText("Max period:")
+
+        self.max_period_in = QLineEdit(self)
+        self.max_period_in.setGeometry(375, 250, 100, 25)
+        self.max_period_in.setText("1000")
+
+        self.step_period_text = QLabel(self)
+        self.step_period_text.setGeometry(100, 350, 75, 25)
+        self.step_period_text.setText("Step period:")
+
+        self.step_period_in = QLineEdit(self)
+        self.step_period_in.setGeometry(175, 350, 100, 25)
+        self.step_period_in.setText("0.00001")
 
         self.butn = QPushButton(self)
         self.butn.setText("ok")
-        self.butn.move(325, 400)
+        self.butn.setGeometry(300, 425, 100, 50)
+
+    def chek_value(self):
+        if not(os.path.isdir(self.Fiel_line_in.text())):
+            self.Fiel_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        elif not(os.path.isdir(self.star_line_in.text())):
+            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.star_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        elif not(is_foat(self.max_period_in.text())):
+            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+        elif not(is_foat(self.min_period_in.text())):
+            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        elif float(self.min_period_in.text()) > float(self.max_period_in.text()):
+            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+        elif float(self.min_period_in.text()) == 0:
+            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        else:
+            self.successfully = True
 
     def start(self):
         with open("seting.txt", "w") as f:
             f.writelines(self.star_line_in.text()+"\n")
-            f.writelines(self.Fiel_line_in.text())
-        self.close()
+            f.writelines(self.Fiel_line_in.text()+"\n")
+            f.writelines("Min_period " + self.min_period_in.text() + "\n")
+            f.writelines("Max_period " + self.max_period_in.text() + "\n")
+            f.writelines("Step_period " + self.step_period_in.text())
+
+    def file_choice(self):
+        self.Fiel_line_in.setText(QFileDialog().getExistingDirectory(self))
+    def star_choice(self):
+        self.star_line_in.setText(QFileDialog().getExistingDirectory(self))
 
 class errWind(QWidget):
     def __init__(self):
@@ -453,12 +550,13 @@ class previewwin(QWidget):
 
     def initUI(self):
         self.setGeometry(0, 0, 1220, 820)
-        self.setWindowTitle('График')
+        self.setWindowTitle('Preview')
         self.setStyleSheet('background: rgb(248, 248, 255);')
 
         self.lab = QLabel(self)
         self.lab.move(10, 10)
         self.pi = QPixmap(self.path)
+        self.setGeometry(0, 0, self.pi.width()+20, self.pi.height()+20)
         self.lab.setPixmap(self.pi)
 
 
@@ -485,14 +583,14 @@ class OBRwin(QWidget):
         self.line_Per.move(100, 50)
 
         self.line_Per_in = QLineEdit(self)
-        self.line_Per_in.move(300, 50)
+        self.line_Per_in.setGeometry(300, 50, 200, 25)
 
         self.line_E = QLabel(self)
         self.line_E.setText("Epoch:")
         self.line_E.move(100, 100)
 
         self.line_Epoch_in = QLineEdit(self)
-        self.line_Epoch_in.move(300, 100)
+        self.line_Epoch_in.setGeometry(300, 100, 200, 25)
         self.line_Epoch_in.setMaxLength(50)
 
         self.line_F = QLabel(self)
@@ -500,8 +598,13 @@ class OBRwin(QWidget):
         self.line_F.move(100, 150)
 
         self.line_F_in = QLineEdit(self)
-        self.line_F_in.move(300, 150)
+        self.line_F_in.setGeometry(300, 150, 200, 25)
         self.line_F_in.setMaxLength(80)
+
+        self.line_btn = QPushButton(self)
+        self.line_btn.setGeometry(500, 150, 50,25)
+        self.line_btn.setText("Select")
+        self.line_btn.clicked.connect(self.get_txt)
 
         self.butn1 = QPushButton("go", self)
         self.butn1.move(800, 500)
@@ -537,7 +640,7 @@ class OBRwin(QWidget):
         self.val_Ep.move(100, 250)
 
         self.val_Ep_in = QLineEdit(self)
-        self.val_Ep_in.move(300, 250)
+        self.val_Ep_in.setGeometry(300, 250, 200, 25)
 
         self.type_line = QLabel(self)
         self.type_line.move(100, 300)
@@ -579,6 +682,9 @@ class OBRwin(QWidget):
             self.make = False
         else:
             self.make = True
+
+    def get_txt(self):
+        self.line_F_in.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Text Files (*.txt *.tbl)")[0])
 
     def count(self):
         if self.line_F_in.text() == "" or self.line_F_in.text() == "Обязательное поле":
@@ -846,7 +952,10 @@ class registrWin(QWidget):
                 z = ztf.points()
 
             if self.per_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
-                per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
+                if self.type_line_in.currentText() in mp:
+                    per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
+                else:
+                    per, ep = map(str, Lafler_clinman(p + "\ "[0] + z[0], max=False))
                 self.per_line_in.setText(per)
                 self.Epoch_line_in.setText(ep)
             if z != []:
@@ -855,13 +964,13 @@ class registrWin(QWidget):
                     if self.type_line_in.currentText() in mp:
                         l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Максимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
                         l.make_LightCurve_with_per(False)
-                        m.append(p+"\ "[0]+"Other"+z[i][4]+"P.txt")
+                        m.append([p+"\ "[0]+"Other"+z[i][4]+"P.txt", z[i][4]])
                     elif self.type_line_in.currentText() in mip:
                         l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Минимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
                         l.make_LightCurve_with_per(False)
-                        m.append(p + "\ "[0] + "Other" + z[i][4] + "P.txt")
+                        m.append([p + "\ "[0] + "Other" + z[i][4] + "P.txt", z[i][4]])
                     else:
-                        m.append(p+"\ "[0]+z[i])
+                        m.append([p+"\ "[0]+z[i],z[i][4]])
                 if self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip:
                     gr =makeGrapf(m, p, self.star_name_in.text(), True)
                     gr.make()
@@ -935,27 +1044,271 @@ class win(QMainWindow):
                 pass
         with open("seting.txt", "r") as f:
             if f.read() == "":
-                self.w1.butn.clicked.connect(self.w1.start)
+                self.w1.butn.clicked.connect(self.w1.chek_value)
                 self.w1.show()
-                self.w1.butn.clicked.connect(self.w2)
+                self.w1.butn.clicked.connect(self.success)
             else:
                 self.w2()
 
     def w2(self):
         self.w2 = win2()
         self.w2.w1()
+    def success(self):
+        if self.w1.successfully:
+            self.w1.start()
+            self.w1.close()
+            self.w2()
+
+class Plate_Window(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        with open("seting.txt") as f:
+            self.path_save = f.read().split("\n")[1]
+        self.prev_file = False
+        self.key_error = 0
+        self.dark_value = False
+        self.show_errwin = ""
+
+
+    def initUI(self):
+        user = ctypes.windll.user32
+        self.setGeometry(0, 0, user.GetSystemMetrics(0), user.GetSystemMetrics(1))
+        self.setWindowTitle('Звёздный помошник')
+        self.setStyleSheet('background: rgb(248, 248, 255);')
+
+        self.beak_btn = QPushButton(self)
+        self.beak_btn.setText("Beak")
+        self.beak_btn.setGeometry(1700, 150, 100, 50)
+
+        self.dark_btn = QPushButton(self)
+        self.dark_btn.setText("Dark")
+        self.dark_btn.setGeometry(1700, 100, 100, 50)
+        self.dark_btn.clicked.connect(self.dark)
+
+        self.name = QLabel(self)
+        self.name.setText("Name")
+        self.name.move(100, 50)
+
+        self.name_in = QLineEdit(self)
+        self.name_in.setText("Color")
+        self.name_in.setGeometry(200, 50, 200, 25)
+
+        self.R = QLabel(self)
+        self.R.setText("Red plate")
+        self.R.move(100, 100)
+
+        self.R_line = QLineEdit(self)
+        self.R_line.setGeometry(200, 100, 200, 25)
+
+        self.R_btn = QPushButton(self)
+        self.R_btn.setGeometry(400, 100, 50, 25)
+        self.R_btn.setText("Select")
+        self.R_btn.clicked.connect(self.get_r)
+
+        self.G = QLabel(self)
+        self.G.setText("Green plate")
+        self.G.move(100, 150)
+
+        self.G_line = QLineEdit(self)
+        self.G_line.setGeometry(200, 150, 200, 25)
+
+        self.G_btn = QPushButton(self)
+        self.G_btn.setGeometry(400, 150, 50, 25)
+        self.G_btn.setText("Select")
+        self.G_btn.clicked.connect(self.get_g)
+
+        self.B = QLabel(self)
+        self.B.setText("Blue plate")
+        self.B.move(100, 200)
+
+        self.B_line = QLineEdit(self)
+        self.B_line.setGeometry(200,200, 200, 25)
+
+        self.B_btn = QPushButton(self)
+        self.B_btn.setGeometry(400, 200, 50, 25)
+        self.B_btn.clicked.connect(self.get_b)
+        self.B_btn.setText("Select")
+
+        self.color_combinations = QLabel(self)
+        self.color_combinations.setText("Тип комбинации")
+        self.color_combinations.move(100, 250)
+
+        self.color_combinations_value = QComboBox(self)
+        self.color_combinations_value.addItems(["BRIR", "BR B+R"])
+        self.color_combinations_value.setGeometry(200, 250, 200, 25)
+
+        self.color_size = QLabel(self)
+        self.color_size.setText("FOV")
+        self.color_size.move(100, 300)
+
+        self.color_size_value = QComboBox(self)
+        self.color_size_value.addItems(["10'x10'", "5'x5'"])
+        self.color_size_value.setGeometry(200, 300, 200, 25)
+
+        self.color_btn = QPushButton(self)
+        self.color_btn.setGeometry(800, 500, 100, 50)
+        self.color_btn.setText("Color")
+        self.color_btn.clicked.connect(self.color)
+
+        self.clear_btn = QPushButton(self)
+        self.clear_btn.setGeometry(1700, 50, 100, 50)
+        self.clear_btn.setText("Clear")
+        self.clear_btn.clicked.connect(self.clear)
+
+        self.butn4 = QPushButton("Preview", self)
+        self.butn4.setGeometry(1700, 200, 100, 50)
+        self.butn4.clicked.connect(self.preview)
+    def dark(self):
+        if self.dark_btn.text() == "Dark":
+            self.dark_value = True
+            self.setStyleSheet(setstell1)
+            self.dark_btn.setText("White")
+            if self.key_error == 1:
+                self.R_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+                self.G_line.setStyleSheet(setstell1)
+                self.B_line.setStyleSheet(setstell1)
+            elif self.key_error == 2:
+                self.R_line.setStyleSheet(setstell1)
+                self.G_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+                self.B_line.setStyleSheet(setstell1)
+            elif self.key_error == 3:
+                self.R_line.setStyleSheet(setstell1)
+                self.G_line.setStyleSheet(setstell1)
+                self.B_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+        else:
+            self.dark_value = False
+            self.dark_btn.setText("Dark")
+            self.setStyleSheet('background: rgb(248, 248, 255);')
+            if self.key_error == 1:
+                self.R_line.setStyleSheet("background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)")
+                self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
+                self.B_line.setStyleSheet('background: rgb(248, 248, 255);')
+            elif self.key_error == 2:
+                self.R_line.setStyleSheet("background: rgb(248, 248, 255);")
+                self.G_line.setStyleSheet('background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)')
+                self.B_line.setStyleSheet('background: rgb(248, 248, 255);')
+            elif self.key_error == 2:
+                self.R_line.setStyleSheet("background: rgb(248, 248, 255);")
+                self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
+                self.B_line.setStyleSheet('background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)')
+
+    def get_r(self):
+        self.R_line.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Image Files (*.fits)")[0])
+
+    def get_b(self):
+        self.B_line.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Image Files (*.fits)")[0])
+
+    def get_g(self):
+        self.G_line.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Image Files (*.fits)")[0])
+
+    def preview(self):
+        self.prev_file =True
+        self.color()
+        self.pr = previewwin(self.prev_file)
+        self.pr.show()
+        self.prev_file = False
+
+    def color(self):
+        if self.R_line.text() == "" or self.R_line.text() == "Выберете файл":
+            self.R_line.setText("Выберете файл")
+            self.R_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.key_error = 1
+        elif self.G_line.text() == "" or self.G_line.text() == "Выберете файл":
+            self.G_line.setText("Выберете файл")
+            self.G_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            if self.dark_value:
+                self.R_line.setStyleSheet(setstell1)
+            else:
+                self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
+            self.key_error = 2
+        elif self.B_line.text() == "" or self.B_line.text() == "Выберете файл":
+            if self.dark_value:
+                self.R_line.setStyleSheet(setstell1)
+                self.G_line.setStyleSheet(setstell1)
+            else:
+                self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
+                self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
+            self.B_line.setText("Выберете файл")
+            self.B_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.key_error = 3
+
+        else:
+            if self.dark_value:
+                self.R_line.setStyleSheet(setstell1)
+                self.G_line.setStyleSheet(setstell1)
+                self.B_line.setStyleSheet(setstell1)
+            else:
+                self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
+                self.B_line.setStyleSheet('background: rgb(248, 248, 255);')
+                self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
+            save_as = self.name_in.text()
+            data = []
+            data.append(self.R_line.text())
+            data.append(self.G_line.text())
+            data.append(self.B_line.text())
+            color = Image.new("RGB", (1240, 1240), 'white')
+
+            for i in range(len(data)):
+                image_data = fits.getdata(data[i])
+                pyp.figure(figsize=(20, 20))
+                pyp.imshow(image_data, cmap='gray')
+                pyp.colorbar()
+                name = data[i] + '.png'
+                pyp.savefig(name)
+                pyp.close()
+                image = Image.open(name)
+                image = image.crop((250, 390, 1490, 1630))
+                pixels = image.load()
+                color_p = color.load()
+                for y in range(image.size[0]):
+                    for x in range(image.size[1]):
+                        zn = color_p[y, x]
+                        if i == 0:
+                            zn = (pixels[y, x][i], 1, 1)
+                        elif i == 1:
+                            zn = (zn[0], pixels[y, x][i], 1)
+                        else:
+                            zn = (zn[0], zn[1], pixels[y, x][i])
+                        color_p[y, x] = zn
+            colorsize = self.color_size_value.currentText()
+            if colorsize == "10'x10'":
+                color = color.crop((200, 200, 1040, 1040))
+            else:
+                color = color.crop((400, 400, 840, 840))
+            color = color.resize((800, 800))
+            color = ImageOps.flip(color)
+            dr = ImageDraw.Draw(color)
+            dr.line(((370, 400), (390, 400)), fill=(255, 255, 255))
+            dr.line(((410, 400), (430, 400)), fill=(255, 255, 255))
+            font = ImageFont.truetype("arial.ttf", 40)
+            dr.text((400, 50), save_as, fill="#FFFFFF", font=font, anchor="ms")
+            font = ImageFont.truetype("arial.ttf", 30)
+            dr.text((100, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
+            dr.text((700, 775), "FOV: " + self.color_size_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
+            color.save(self.path_save+"/"+save_as.strip()+" " +self.color_size_value.currentText()+ ".png")
+            if self.prev_file:
+                self.prev_file = self.path_save+"/"+save_as.strip()+" " +self.color_size_value.currentText()+ ".png"
+
+    def clear(self):
+        self.R_line.clear()
+        self.G_line.clear()
+        self.B_line.clear()
+        self.name_in.setText("Color")
 
 class win2(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
         self.wi2 = ""
         self.wi3 = ""
+        self.wi4 = ""
 
     def w1(self):
         self.wi1 = vari()
         self.wi1.show()
         self.wi1.btn_OBR.clicked.connect(self.w2)
         self.wi1.btn_Reg.clicked.connect(self.w3)
+        self.wi1.plate_OBR.clicked.connect(self.w4)
     def w2(self):
         self.wi1.close()
         self.wi2 = OBRwin()
@@ -966,6 +1319,12 @@ class win2(QMainWindow):
         self.wi3 = registrWin()
         self.wi3.show()
         self.wi3.beak_btn.clicked.connect(self.beak)
+    def w4(self):
+        self.wi1.close()
+        self.wi4 = Plate_Window()
+        self.wi4.show()
+        self.wi4.beak_btn.clicked.connect(self.beak)
+
     def beak(self):
         if self.wi2 != '':
             self.wi2.close()
@@ -974,6 +1333,10 @@ class win2(QMainWindow):
         if self.wi3 != '':
             self.wi3.close()
             self.wi3 = ""
+            self.w1()
+        if self.wi4 != "":
+            self.wi4.close()
+            self.wi4 = ""
             self.w1()
 
 if __name__ == '__main__':
