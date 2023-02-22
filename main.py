@@ -12,7 +12,7 @@ from os import makedirs
 import requests
 import re
 import csv
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageStat
 from astropy.io import fits
 
 
@@ -111,7 +111,7 @@ class OtherName:
 class ZTF_Points:
     def __init__(self, coord, fiel_name, mag = True):#на вход координаты и путь куда будут сохраняться файлы / mag - если true то ищет магнитуду дополнительео выводит масив макс зн \мин зн\ фильтр
         self.fiel_name = fiel_name #куда сохраняю файл
-        self.ssilka1 = "https://irsa.ipac.caltech.edu/cgi-bin/Gator/nph-query?spatial=box&catalog=ztf_objects_dr12&objstr={}h+{}m+{}s+{}d+{}m+{}s&size=10&outfmt=1".format(*coord.split())
+        self.ssilka1 = "https://irsa.ipac.caltech.edu/cgi-bin/Gator/nph-query?spatial=box&catalog=ztf_objects_dr15&objstr={}h+{}m+{}s+{}d+{}m+{}s&size=10&outfmt=1".format(*coord.split())
         #запрос к ztf из которого я получаю какие именно данные наблюдений мне нужно запрасить в дальнейшем
         self.ssilka2 = "https://irsa.ipac.caltech.edu/cgi-bin/ZTF/nph_light_curves?ID={}"#запрос данных
         self.mag = mag
@@ -156,7 +156,7 @@ class ZTF_Points:
                 magn.append(g_mag)
 
         if name_r != []:
-            if self.mag:#
+            if self.mag:
                 r_mag = [100, -100, "r"]
             ret.append('ztf_r.txt')#записываю что сделал файл с наблюдениями в фильтре r
             name_r = max(name_r, key=lambda x: x[1])[0]#выбираю тот набор в котором больше всего наблюдений
@@ -524,6 +524,14 @@ class setting(QWidget):
         self.Fiel_line_in.setText(QFileDialog().getExistingDirectory(self))
     def star_choice(self):
         self.star_line_in.setText(QFileDialog().getExistingDirectory(self))
+    def fill_inf(self):
+        with open("seting.txt") as f:
+            file = f.read().split("\n")
+            self.star_line_in.setText(file[0])
+            self.Fiel_line_in.setText(file[1])
+            self.min_period_in.setText(file[2].split()[1])
+            self.max_period_in.setText(file[3].split()[1])
+            self.step_period_in.setText(file[4].split()[1])
 
 class errWind(QWidget):
     def __init__(self):
@@ -671,6 +679,25 @@ class OBRwin(QWidget):
         self.make_grath = QLabel(self)
         self.make_grath.move(100, 400)
         self.make_grath.setText("Make grath")
+
+        self.settings_btn =QPushButton(self)
+        self.settings_btn.setText("Настройки")
+        self.settings_btn.setGeometry(1700, 250, 100, 50)
+        self.settings_btn.clicked.connect(self.show_settings)
+
+    def show_settings(self):
+        self.settig = setting()
+        self.settig.fill_inf()
+        self.settig.show()
+        self.settig.butn.clicked.connect(self.settig.chek_value)
+        self.settig.butn.clicked.connect(self.success)
+    def success(self):
+        if self.settig.successfully:
+            self.settig.start()
+            with open("seting.txt") as f:
+                self.name_per_fiel = f.read().split("\n")[1]
+            self.settig.close()
+
     def claer(self):
         self.line_F_in.clear()
         self.line_Epoch_in.clear()
@@ -888,6 +915,25 @@ class registrWin(QWidget):
         self.comm_line_in.setGeometry(300, 750, 200, 225)
         self.comm_line_in.setPlainText("GaiaEDR3 position.")
 
+        self.settings_btn = QPushButton(self)
+        self.settings_btn.setText("Настройки")
+        self.settings_btn.setGeometry(1700, 200, 100, 50)
+        self.settings_btn.clicked.connect(self.show_settings)
+
+    def show_settings(self):
+        self.settig = setting()
+        self.settig.fill_inf()
+        self.settig.show()
+        self.settig.butn.clicked.connect(self.settig.chek_value)
+        self.settig.butn.clicked.connect(self.success)
+
+    def success(self):
+        if self.settig.successfully:
+            self.settig.start()
+            with open("seting.txt") as f:
+                self.path_star = f.readline().split("\n")[0]
+            self.settig.close()
+
     def dark(self):
         if self.dark_btn.text() == "Dark":
             self.dark_btn.setText("White")
@@ -1070,7 +1116,6 @@ class Plate_Window(QWidget):
         self.dark_value = False
         self.show_errwin = ""
 
-
     def initUI(self):
         user = ctypes.windll.user32
         self.setGeometry(0, 0, user.GetSystemMetrics(0), user.GetSystemMetrics(1))
@@ -1159,6 +1204,25 @@ class Plate_Window(QWidget):
         self.butn4 = QPushButton("Preview", self)
         self.butn4.setGeometry(1700, 200, 100, 50)
         self.butn4.clicked.connect(self.preview)
+
+        self.settings_btn = QPushButton(self)
+        self.settings_btn.setText("Настройки")
+        self.settings_btn.setGeometry(1700, 250, 100, 50)
+        self.settings_btn.clicked.connect(self.show_settings)
+
+    def show_settings(self):
+        self.settig = setting()
+        self.settig.fill_inf()
+        self.settig.show()
+        self.settig.butn.clicked.connect(self.settig.chek_value)
+        self.settig.butn.clicked.connect(self.success)
+
+    def success(self):
+        if self.settig.successfully:
+            self.settig.start()
+            with open("seting.txt") as f:
+                self.path_save = f.read().split("\n")[1]
+            self.settig.close()
     def dark(self):
         if self.dark_btn.text() == "Dark":
             self.dark_value = True
@@ -1210,7 +1274,7 @@ class Plate_Window(QWidget):
         self.prev_file = False
 
     def color(self):
-        if self.R_line.text() == "" or self.R_line.text() == "Выберете файл":
+        if self.R_line.text() == "" and self.color_combinations_value.currentText() != "BRIR" or self.R_line.text() == "Выберете файл":
             self.R_line.setText("Выберете файл")
             self.R_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.key_error = 1
@@ -1244,20 +1308,48 @@ class Plate_Window(QWidget):
                 self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
             save_as = self.name_in.text()
             data = []
-            data.append(self.R_line.text())
+            type_comb = self.color_combinations_value.currentText()
             data.append(self.G_line.text())
             data.append(self.B_line.text())
+            if type_comb == "BRIR":
+                data.append(self.R_line.text())
             color = Image.new("RGB", (1240, 1240), 'white')
+            data_png = []
 
             for i in range(len(data)):
                 image_data = fits.getdata(data[i])
                 pyp.figure(figsize=(20, 20))
                 pyp.imshow(image_data, cmap='gray')
                 pyp.colorbar()
-                name = data[i] + '.png'
+                if i == 0:
+                    name = self.path_save + '/GRIN.png'
+                elif i == 1:
+                    name = self.path_save + '/BLUE.png'
+                else:
+                    name = self.path_save + '/RAD.png'
+                data_png.append(name)
                 pyp.savefig(name)
                 pyp.close()
+
+            if type_comb != "BRIR":
+                image_g = Image.open(data_png[0])
+                image_b = Image.open(data_png[1])
+                image_br = Image.blend(image_b, image_g, alpha=0.5)
+                image_br.save(self.path_save + "/BandR.png")
+                data_png.append(self.path_save + "/BandR.png")
+
+            delta_color = []
+            for name in data_png:
                 image = Image.open(name)
+                stat = ImageStat.Stat(image).mean
+                delta_color.append(stat[0])
+
+            max_color = max(delta_color)
+            for i in range(len(delta_color)):
+                delta_color[i] = round(max_color - delta_color[i])
+
+            for i in range(len(data_png)):
+                image = Image.open(data_png[i])
                 image = image.crop((250, 390, 1490, 1630))
                 pixels = image.load()
                 color_p = color.load()
@@ -1265,11 +1357,11 @@ class Plate_Window(QWidget):
                     for x in range(image.size[1]):
                         zn = color_p[y, x]
                         if i == 0:
-                            zn = (pixels[y, x][i], 1, 1)
+                            zn = (1, pixels[y, x][i]+ delta_color[i], 1)
                         elif i == 1:
-                            zn = (zn[0], pixels[y, x][i], 1)
+                            zn = (1, zn[1], pixels[y, x][i]+ delta_color[i])
                         else:
-                            zn = (zn[0], zn[1], pixels[y, x][i])
+                            zn = (pixels[y, x][i]+ delta_color[i], zn[1], zn[2])
                         color_p[y, x] = zn
             colorsize = self.color_size_value.currentText()
             if colorsize == "10'x10'":
@@ -1284,7 +1376,10 @@ class Plate_Window(QWidget):
             font = ImageFont.truetype("arial.ttf", 40)
             dr.text((400, 50), save_as, fill="#FFFFFF", font=font, anchor="ms")
             font = ImageFont.truetype("arial.ttf", 30)
-            dr.text((100, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
+            if type_comb == "BRIR":
+                dr.text((100, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
+            else:
+                dr.text((150, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
             dr.text((700, 775), "FOV: " + self.color_size_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
             color.save(self.path_save+"/"+save_as.strip()+" " +self.color_size_value.currentText()+ ".png")
             if self.prev_file:
