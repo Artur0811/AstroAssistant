@@ -1,12 +1,12 @@
 import sys, ctypes,math
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox, QMainWindow, QGridLayout, QSizePolicy
 from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox, QPlainTextEdit, QFileDialog
 from PyQt5.QtGui import QPixmap
 import seaborn as sns
 import matplotlib.pyplot as pyp
 import pandas as pn
-from PyQt5.QtCore import pyqtSignal, QObject
-from random import randrange
 import os
 from os import makedirs
 import requests
@@ -40,6 +40,9 @@ color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(2
 }
 '''
 
+def is_coord(value):
+    match = re.fullmatch(r"\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}\s[+-]\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}", value)
+    return True if match else False
 
 def Lafler_clinman(name, max = True):
     with open(name) as f:
@@ -57,11 +60,13 @@ def Lafler_clinman(name, max = True):
             elif m[-1][1] > ma and not(max):
                 ma = m[-1][1]
                 ep0 = m[-1][0]
-        pmin = 1
-        pmax = 1000
+        with open("setting.txt") as f:
+            file = f.read().split("\n")
+            pmin = float(file[2].split()[1])
+            pmax = float(file[3].split()[1])
+            step = float(file[4].split()[1])
         wmin = 1 / pmax
         wmax = 1 / pmin
-        step = 0.00001
 
         def drob(n):
             return n - math.floor(n)
@@ -202,9 +207,9 @@ class makeGrapf:#создает график из данных файла. фо�
                     ymin = mi
                 if ma > ymax:
                     ymax = ma
-            data = pn.read_csv(self.savef+"\data.csv")
-            color = dict({"r":"#f80000", "g":"#000080", "c" : "#40734f",  "o":"#f5770a"})
-            g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
+        data = pn.read_csv(self.savef+"\data.csv")
+        color = dict({"r":"#f80000", "g":"#000080", "c" : "#40734f",  "o":"#f5770a"})
+        g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
         g.figure.set_figheight(8)
         pyp.ylim(ymax+0.5, ymin-0.5)
@@ -418,14 +423,17 @@ class setting(QWidget):
         super().__init__()
         self.initUI()
         self.successfully =False
+        self.err_win = ""
 
     def initUI(self):
-        self.setGeometry(600, 200, 700, 600)
+        self.setFixedSize(700, 600)
+        user = ctypes.windll.user32
+        self.move(user.GetSystemMetrics(0) // 2 - 350, user.GetSystemMetrics(1) // 2 - 300)
         self.setWindowTitle('Setting')
         self.setStyleSheet('background: rgb(248, 248, 255);')
 
         self.Fiel_line = QLabel(self)
-        self.Fiel_line.setText("Set path form periods program fiel:")
+        self.Fiel_line.setText("Path to the created files:")
         self.Fiel_line.move(100, 50)
 
         self.Fiel_line_in = QLineEdit(self)
@@ -438,7 +446,7 @@ class setting(QWidget):
         self.Fiel_line_choice.clicked.connect(self.file_choice)
 
         self.star_line = QLabel(self)
-        self.star_line.setText("Set path form star fiel:")
+        self.star_line.setText("Path for registration cards:")
         self.star_line.move(100, 150)
 
         self.star_line_in = QLineEdit(self)
@@ -484,36 +492,56 @@ class setting(QWidget):
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.err_win = errWind("Папка не найдена!")
+            self.err_win.show()
         elif not(os.path.isdir(self.star_line_in.text())):
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.err_win = errWind("Папка не найдена!")
+            self.err_win.show()
         elif not(is_foat(self.max_period_in.text())):
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.err_win = errWind("Укажите число!")
+            self.err_win.show()
         elif not(is_foat(self.min_period_in.text())):
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.err_win = errWind("Укажите число!")
+            self.err_win.show()
         elif float(self.min_period_in.text()) > float(self.max_period_in.text()):
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.err_win = errWind("Минимальный период должен быть меньше максимального!")
+            self.err_win.show()
         elif float(self.min_period_in.text()) == 0:
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.err_win = errWind("Минимальный период не может равняться 0!")
+            self.err_win.show()
         else:
+            if self.err_win != "":
+                self.err_win.close()
+                self.err_win = ""
             self.successfully = True
 
+    def closeEvent(self, event):
+        if self.err_win != "":
+            self.err_win.close()
+            self.err_win = ""
+
     def start(self):
-        with open("seting.txt", "w") as f:
+        with open("setting.txt", "w") as f:
             f.writelines(self.star_line_in.text()+"\n")
             f.writelines(self.Fiel_line_in.text()+"\n")
             f.writelines("Min_period " + self.min_period_in.text() + "\n")
@@ -522,10 +550,12 @@ class setting(QWidget):
 
     def file_choice(self):
         self.Fiel_line_in.setText(QFileDialog().getExistingDirectory(self))
+
     def star_choice(self):
         self.star_line_in.setText(QFileDialog().getExistingDirectory(self))
+
     def fill_inf(self):
-        with open("seting.txt") as f:
+        with open("setting.txt") as f:
             file = f.read().split("\n")
             self.star_line_in.setText(file[0])
             self.Fiel_line_in.setText(file[1])
@@ -534,17 +564,26 @@ class setting(QWidget):
             self.step_period_in.setText(file[4].split()[1])
 
 class errWind(QWidget):
-    def __init__(self):
+    def __init__(self, text_err):
         super().__init__()
+        self.text_err = text_err
         self.initUI()
+
     def initUI(self):
-        self.setGeometry(500, 400, 400, 250)
+        self.setFixedSize(400, 200)
+        user = ctypes.windll.user32
+        self.move(user.GetSystemMetrics(0) // 2 - 200, user.GetSystemMetrics(1) // 2 - 100)
         self.setStyleSheet('background: rgb(248, 248, 255);')
         self.setWindowTitle('ERR')
 
+        self.err_show = QLabel(self)
+        self.err_show.setText(self.text_err)
+        self.err_show.setGeometry(0,0,400, 100)
+        self.err_show.setAlignment(Qt.AlignCenter)
+
         self.btn = QPushButton(self)
         self.btn.setText("OK")
-        self.btn.satGeometry(400, 300, 100, 30)
+        self.btn.setGeometry(150, 120, 100, 30)
         self.btn.clicked.connect(self.ok)
 
     def ok(self):
@@ -557,14 +596,13 @@ class previewwin(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(0, 0, 1220, 820)
         self.setWindowTitle('Preview')
         self.setStyleSheet('background: rgb(248, 248, 255);')
 
         self.lab = QLabel(self)
         self.lab.move(10, 10)
         self.pi = QPixmap(self.path)
-        self.setGeometry(0, 0, self.pi.width()+20, self.pi.height()+20)
+        self.setFixedSize(self.pi.width()+20, self.pi.height()+20)
         self.lab.setPixmap(self.pi)
 
 
@@ -575,16 +613,20 @@ class OBRwin(QWidget):
         user = ctypes.windll.user32
         self.x = user.GetSystemMetrics(0)
         self.y = user.GetSystemMetrics(1)
-        with open("seting.txt") as f:
+        with open("setting.txt") as f:
             self.name_per_fiel = f.read().split("\n")[1]
         self.err_key = 0
         self.make = False
+        self.settig = ""
+        self.show_errwin = ""
+        self.dark_value = False
 
     def initUI(self):
         user = ctypes.windll.user32
         self.setGeometry(0, 0, user.GetSystemMetrics(0), user.GetSystemMetrics(1))
-        self.setWindowTitle('Звёздный помошник')
+        self.setWindowTitle('Star Assistant')
         self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setMinimumSize(1200, 600)
 
         self.line_Per = QLabel(self)
         self.line_Per.setText("Period (d):")
@@ -615,7 +657,7 @@ class OBRwin(QWidget):
         self.line_btn.clicked.connect(self.get_txt)
 
         self.butn1 = QPushButton("go", self)
-        self.butn1.move(800, 500)
+        self.butn1.move(self.width()//2 - 50, 500)
         self.butn1.resize(100, 50)
         self.butn1.clicked.connect(self.count)
 
@@ -630,7 +672,7 @@ class OBRwin(QWidget):
         self.butn3.clicked.connect(self.dark)
 
         self.butn4 = QPushButton("Preview", self)
-        self.butn4.setGeometry(1700, 200, 100, 50)
+        self.butn4.setGeometry(self.width() - 200, 200, 100, 50)
         self.butn4.clicked.connect(self.preview)
 
         self.data_line= QLabel(self)
@@ -670,7 +712,7 @@ class OBRwin(QWidget):
 
         self.beak_btn = QPushButton(self)
         self.beak_btn.setText("Beak")
-        self.beak_btn.setGeometry(1700, 150, 100, 50)
+        self.beak_btn.setGeometry(self.width() - 200, 150, 100, 50)
 
         self.make_grath_true = QCheckBox(self)
         self.make_grath_true.move(300, 400)
@@ -682,8 +724,23 @@ class OBRwin(QWidget):
 
         self.settings_btn =QPushButton(self)
         self.settings_btn.setText("Настройки")
-        self.settings_btn.setGeometry(1700, 250, 100, 50)
+        self.settings_btn.setGeometry(self.width() - 200, 250, 100, 50)
         self.settings_btn.clicked.connect(self.show_settings)
+
+    def closeEvent(self, event):
+        if self.settig != "":
+            self.settig.close()
+            self.settig = ""
+        if self.show_errwin != "":
+            self.show_errwin.close()
+
+    def resizeEvent(self, event):
+        self.settings_btn.move(self.width() - 200, 250)
+        self.butn3.move(self.width()- 200, 50)
+        self.butn4.move(self.width() - 200, 200)
+        self.beak_btn.move(self.width()- 200, 150)
+        self.butn2.move(self.width() - 200, 100)
+        self.butn1.move(self.width()//2 - 50, 500)
 
     def show_settings(self):
         self.settig = setting()
@@ -691,10 +748,11 @@ class OBRwin(QWidget):
         self.settig.show()
         self.settig.butn.clicked.connect(self.settig.chek_value)
         self.settig.butn.clicked.connect(self.success)
+
     def success(self):
         if self.settig.successfully:
             self.settig.start()
-            with open("seting.txt") as f:
+            with open("setting.txt") as f:
                 self.name_per_fiel = f.read().split("\n")[1]
             self.settig.close()
 
@@ -718,32 +776,84 @@ class OBRwin(QWidget):
             self.line_F_in.setText("Обязательное поле")
             self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.err_key =1
+            self.show_errwin = errWind("Не указан путь к файлу!")
+            self.show_errwin.show()
         else:
-            self.line_F_in.setStyleSheet('background: rgb(248, 248, 255);')
+            if self.dark_value:
+                self.line_F_in.setStyleSheet('background: rgb(28, 28, 28)')
+            else:
+                self.line_F_in.setStyleSheet('background: rgb(248, 248, 255);')
+
             if self.line_Epoch_in.text() == "" and self.line_Per_in.text() != "" or self.line_Epoch_in.text() == "Обязательное поле" and self.line_Per_in.text() != "":
                 self.line_Epoch_in.setText("Обязательное поле")
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
-                self.err_key =2
+                if self.dark_value:
+                    self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.err_key = 2
+                self.show_errwin = errWind("Вы указали период! Укажите эпоху!")
+                self.show_errwin.show()
+            elif not(is_foat(self.line_Per_in.text())) and self.line_Per_in.text() != "":
+                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                self.err_key = 4
+                if self.dark_value:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.show_errwin = errWind("Период должен быть числом!")
+                self.show_errwin.show()
+            elif not(is_foat(self.line_Epoch_in.text())) and self.line_Epoch_in.text() != "":
+                self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                self.err_key = 5
+                if self.dark_value:
+                    self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.show_errwin = errWind("Эпоха должна быть числом!")
+                self.show_errwin.show()
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
                 self.line_Per_in.setText("Обязательное поле")
-                self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                if self.dark_value:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.err_key = 3
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
-                self.err_key =0
-                otvet = LightCurve(self.line_Per_in.text(), self.line_F_in.text(), self.type_box.currentText(),
-                                   self.data_box.currentText(), self.line_Epoch_in.text(),
-                                   self.filter_box.currentText(), self.name_per_fiel, self.make)
-                rezult = otvet.make_LightCurve_with_per()
-                self.val_Ep_in.setText(str(rezult)[:10])
-
+                self.show_errwin = errWind("Вы указали эпоху! Укажите период!")
+                self.show_errwin.show()
             else:
-                otvet = LightCurve("",self.line_F_in.text(), "", self.data_box.currentText(), "",self.filter_box.currentText() ,self.name_per_fiel, make=self.make)
-                otvet.make_LightCurve_not_per()
+                if self.dark_value:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                    self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                    self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                if self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
+                    otvet = LightCurve(self.line_Per_in.text(), self.line_F_in.text(), self.type_box.currentText(),
+                                       self.data_box.currentText(), self.line_Epoch_in.text(),
+                                       self.filter_box.currentText(), self.name_per_fiel, self.make)
+                    try:
+                        rezult = otvet.make_LightCurve_with_per()
+                        self.val_Ep_in.setText(str(rezult)[:10])
+                        self.err_key = 0
+                    except:
+                        self.show_errwin = errWind("Не удалось обработать файл! Проверьте введенные данные!")
+                        self.show_errwin.show()
+                        self.err_key = 6
+                else:
+                    try:
+                        otvet = LightCurve("",self.line_F_in.text(), "", self.data_box.currentText(), "",self.filter_box.currentText() ,self.name_per_fiel, make=self.make)
+                        otvet.make_LightCurve_not_per()
+                        self.err_key = 0
+                    except:
+                        self.show_errwin = errWind("Не удалось обработать файл! Проверьте введенные данные!")
+                        self.show_errwin.show()
+                        self.err_key = 6
 
     def dark(self):
         if self.butn3.text() == "Dark":
+            self.dark_value = True
             self.butn3.setText("White")
             self.setStyleSheet(setstell1)
             self.line_Per_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
@@ -751,11 +861,12 @@ class OBRwin(QWidget):
             self.line_Epoch_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
             if self.err_key == 1:
                 self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key ==2:
+            elif self.err_key ==2 or self.err_key == 5:
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key == 3:
+            elif self.err_key == 3 or self.err_key == 4:
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
         else:
+            self.dark_value = False
             self.butn3.setText("Dark")
             self.setStyleSheet('background: rgb(248, 248, 255);')
             self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
@@ -763,9 +874,9 @@ class OBRwin(QWidget):
             self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
             if self.err_key == 1:
                 self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key ==2:
+            elif self.err_key ==2 or self.err_key == 5:
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key == 3:
+            elif self.err_key == 3 or self.err_key == 4:
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
 
     def preview(self):
@@ -784,34 +895,35 @@ class registrWin(QWidget):
         self.initUI()
         self.ZTF_f = True
         self.PANSTARRS_F = False
-        with open("seting.txt") as f:
+        with open("setting.txt") as f:
             self.path_star = f.readline().split("\n")[0]
         self.key_err = 0
 
     def initUI(self):
         user = ctypes.windll.user32
         self.setGeometry(0, 0, user.GetSystemMetrics(0), user.GetSystemMetrics(1))
-        self.setWindowTitle('Звёздный помошник')
+        self.setWindowTitle('Star Assistant')
         self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setMinimumSize(1200, 600)
 
         self.dark_btn = QPushButton(self)
         self.dark_btn.setText("Dark")
-        self.dark_btn.setGeometry(1700, 100, 100, 50)
+        self.dark_btn.setGeometry(self.width() - 200, 100, 100, 50)
         self.dark_btn.clicked.connect(self.dark)
 
         self.beak_btn = QPushButton(self)
         self.beak_btn.setText("Beak")
-        self.beak_btn.setGeometry(1700, 150, 100, 50)
+        self.beak_btn.setGeometry(self.width() - 200, 150, 100, 50)
 
         self.clear_btn = QPushButton(self)
-        self.clear_btn.setGeometry(1700, 50, 100, 50)
+        self.clear_btn.setGeometry(self.width() - 200, 50, 100, 50)
         self.clear_btn.setText("Clear")
         self.clear_btn.clicked.connect(self.clear_line)
 
         self.file_btn = QPushButton(self)
         self.file_btn.setText("Create file")
         self.file_btn.clicked.connect(self.create_file)
-        self.file_btn.setGeometry(800, 500, 100, 50)
+        self.file_btn.setGeometry(self.width()//2 - 50, 500, 100, 50)
 
         self.star_name = QLabel(self)
         self.star_name.setText("Имя звезды")
@@ -917,8 +1029,20 @@ class registrWin(QWidget):
 
         self.settings_btn = QPushButton(self)
         self.settings_btn.setText("Настройки")
-        self.settings_btn.setGeometry(1700, 200, 100, 50)
+        self.settings_btn.setGeometry(self.width() - 200, 200, 100, 50)
         self.settings_btn.clicked.connect(self.show_settings)
+
+    def closeEvent(self, event):
+        if self.settig != "":
+            self.settig.close()
+            self.settig = ""
+
+    def resizeEvent(self, event):
+        self.settings_btn.move(self.width() - 200, 200)
+        self.clear_btn.move(self.width()- 200, 50)
+        self.beak_btn.move(self.width()- 200, 150)
+        self.dark_btn.move(self.width() - 200, 100)
+        self.file_btn.move(self.width()//2 - 50, 500)
 
     def show_settings(self):
         self.settig = setting()
@@ -930,7 +1054,7 @@ class registrWin(QWidget):
     def success(self):
         if self.settig.successfully:
             self.settig.start()
-            with open("seting.txt") as f:
+            with open("setting.txt") as f:
                 self.path_star = f.readline().split("\n")[0]
             self.settig.close()
 
@@ -996,7 +1120,6 @@ class registrWin(QWidget):
             else:
                 ztf = ZTF_Points(self.coor_line_in.text(), p, False)
                 z = ztf.points()
-
             if self.per_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
                 if self.type_line_in.currentText() in mp:
                     per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
@@ -1023,7 +1146,6 @@ class registrWin(QWidget):
                 else:
                     gr = makeGrapf(m, p, self.star_name_in.text())
                     gr.make()
-
 
             p1 = p+"\ "[0] + stn + ".txt"
             with open(p1, "w") as f:
@@ -1076,19 +1198,18 @@ class registrWin(QWidget):
 class win(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
-        self.path = os.getcwd()
 
     def w1(self):
         self.w1 = setting()
         try:
-            with open("seting.txt") as f:
+            with open("setting.txt") as f:
                 pass
         except:
-            a = self.path+"\seting.txt"
+            a = "setting.txt"
             a = a
             with open(a, "w") as f:
                 pass
-        with open("seting.txt", "r") as f:
+        with open("setting.txt", "r") as f:
             if f.read() == "":
                 self.w1.butn.clicked.connect(self.w1.chek_value)
                 self.w1.show()
@@ -1099,6 +1220,7 @@ class win(QMainWindow):
     def w2(self):
         self.w2 = win2()
         self.w2.w1()
+
     def success(self):
         if self.w1.successfully:
             self.w1.start()
@@ -1109,26 +1231,28 @@ class Plate_Window(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-        with open("seting.txt") as f:
+        with open("setting.txt") as f:
             self.path_save = f.read().split("\n")[1]
         self.prev_file = False
         self.key_error = 0
         self.dark_value = False
         self.show_errwin = ""
+        self.settig = ""
 
     def initUI(self):
         user = ctypes.windll.user32
         self.setGeometry(0, 0, user.GetSystemMetrics(0), user.GetSystemMetrics(1))
-        self.setWindowTitle('Звёздный помошник')
+        self.setWindowTitle('Star Assistant')
         self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setMinimumSize(1200, 700)
 
         self.beak_btn = QPushButton(self)
         self.beak_btn.setText("Beak")
-        self.beak_btn.setGeometry(1700, 150, 100, 50)
+        self.beak_btn.setGeometry(self.width()- 200, 150, 100, 50)
 
         self.dark_btn = QPushButton(self)
         self.dark_btn.setText("Dark")
-        self.dark_btn.setGeometry(1700, 100, 100, 50)
+        self.dark_btn.setGeometry(self.width()- 200, 100, 100, 50)
         self.dark_btn.clicked.connect(self.dark)
 
         self.name = QLabel(self)
@@ -1192,23 +1316,37 @@ class Plate_Window(QWidget):
         self.color_size_value.setGeometry(200, 300, 200, 25)
 
         self.color_btn = QPushButton(self)
-        self.color_btn.setGeometry(800, 500, 100, 50)
+        self.color_btn.setGeometry(self.width()//2 - 50, 500, 100, 50)
         self.color_btn.setText("Color")
         self.color_btn.clicked.connect(self.color)
 
         self.clear_btn = QPushButton(self)
-        self.clear_btn.setGeometry(1700, 50, 100, 50)
+        self.clear_btn.setGeometry(self.width()- 200, 50, 100, 50)
         self.clear_btn.setText("Clear")
         self.clear_btn.clicked.connect(self.clear)
 
         self.butn4 = QPushButton("Preview", self)
-        self.butn4.setGeometry(1700, 200, 100, 50)
+        self.butn4.setGeometry(self.width()- 200, 200, 100, 50)
         self.butn4.clicked.connect(self.preview)
 
         self.settings_btn = QPushButton(self)
         self.settings_btn.setText("Настройки")
-        self.settings_btn.setGeometry(1700, 250, 100, 50)
+        self.settings_btn.setGeometry(self.width()- 200, 250, 100, 50)
         self.settings_btn.clicked.connect(self.show_settings)
+
+    def closeEvent(self, event):
+        if self.settig != "":
+            self.settig.close()
+        if self.show_errwin != "":
+            self.show_errwin.close()
+
+    def resizeEvent(self, event):
+        self.settings_btn.move(self.width() - 200, 250)
+        self.butn4.move(self.width()- 200, 200)
+        self.clear_btn.move(self.width()- 200, 50)
+        self.beak_btn.move(self.width()- 200, 150)
+        self.dark_btn.move(self.width() - 200, 100)
+        self.color_btn.move(self.width() // 2 - 50, 500)
 
     def show_settings(self):
         self.settig = setting()
@@ -1220,9 +1358,10 @@ class Plate_Window(QWidget):
     def success(self):
         if self.settig.successfully:
             self.settig.start()
-            with open("seting.txt") as f:
+            with open("setting.txt") as f:
                 self.path_save = f.read().split("\n")[1]
             self.settig.close()
+
     def dark(self):
         if self.dark_btn.text() == "Dark":
             self.dark_value = True
@@ -1240,6 +1379,10 @@ class Plate_Window(QWidget):
                 self.R_line.setStyleSheet(setstell1)
                 self.G_line.setStyleSheet(setstell1)
                 self.B_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+            elif self.key_error == 0:
+                self.R_line.setStyleSheet(setstell1)
+                self.G_line.setStyleSheet(setstell1)
+                self.B_line.setStyleSheet(setstell1)
         else:
             self.dark_value = False
             self.dark_btn.setText("Dark")
@@ -1256,6 +1399,10 @@ class Plate_Window(QWidget):
                 self.R_line.setStyleSheet("background: rgb(248, 248, 255);")
                 self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
                 self.B_line.setStyleSheet('background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)')
+            elif self.key_error == 0:
+                self.R_line.setStyleSheet("background: rgb(248, 248, 255);")
+                self.G_line.setStyleSheet("background: rgb(248, 248, 255);")
+                self.B_line.setStyleSheet('background: rgb(248, 248, 255);')
 
     def get_r(self):
         self.R_line.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Image Files (*.fits)")[0])
@@ -1274,19 +1421,25 @@ class Plate_Window(QWidget):
         self.prev_file = False
 
     def color(self):
-        if self.R_line.text() == "" and self.color_combinations_value.currentText() != "BRIR" or self.R_line.text() == "Выберете файл":
+        if self.R_line.text() == "" and self.color_combinations_value.currentText() == "BRIR" or self.R_line.text() == "Выберете файл":
             self.R_line.setText("Выберете файл")
             self.R_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.key_error = 1
+            self.show_errwin = errWind("Не выбран файл!")
+            self.show_errwin.show()
         elif self.G_line.text() == "" or self.G_line.text() == "Выберете файл":
             self.G_line.setText("Выберете файл")
             self.G_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.show_errwin = errWind("Не выбран файл!")
+            self.show_errwin.show()
             if self.dark_value:
                 self.R_line.setStyleSheet(setstell1)
             else:
                 self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
             self.key_error = 2
         elif self.B_line.text() == "" or self.B_line.text() == "Выберете файл":
+            self.show_errwin = errWind("Не выбран файл!")
+            self.show_errwin.show()
             if self.dark_value:
                 self.R_line.setStyleSheet(setstell1)
                 self.G_line.setStyleSheet(setstell1)
@@ -1296,8 +1449,8 @@ class Plate_Window(QWidget):
             self.B_line.setText("Выберете файл")
             self.B_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.key_error = 3
-
         else:
+            self.key_error = 0
             if self.dark_value:
                 self.R_line.setStyleSheet(setstell1)
                 self.G_line.setStyleSheet(setstell1)
@@ -1326,7 +1479,7 @@ class Plate_Window(QWidget):
                 elif i == 1:
                     name = self.path_save + '/BLUE.png'
                 else:
-                    name = self.path_save + '/RAD.png'
+                    name = self.path_save + '/RED.png'
                 data_png.append(name)
                 pyp.savefig(name)
                 pyp.close()
