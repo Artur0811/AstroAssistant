@@ -385,13 +385,10 @@ class LightCurve:
             g.make()
         return correct_epoch
 
-def is_foat(a):
-    if a.count(".")>1:
-        return False
-    a =a.split(".")
-    if len(a)==1:
-        return a[0].isdigit()
-    return a[0].isdigit() and a[1].isdigit()
+def is_foat(value):
+    match1 = re.fullmatch(r"\d{1,}\.\d{0,}", value)
+    match2 = re.fullmatch(r"\d{1,}", value)
+    return (True if match1 else False) or (True if match2 else False)
 
 class vari(QWidget):
     def __init__(self):
@@ -812,6 +809,24 @@ class OBRwin(QWidget):
                     self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.show_errwin = errWind("Эпоха должна быть числом!")
                 self.show_errwin.show()
+            elif float(self.line_Per_in.text()) == 0:
+                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                self.err_key = 7
+                if self.dark_value:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.show_errwin = errWind("Период не может равняться 0 !")
+                self.show_errwin.show()
+            elif float(self.line_Epoch_in.text()) == 0:
+                self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                self.err_key = 8
+                if self.dark_value:
+                    self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                else:
+                    self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.show_errwin = errWind("Эпоха не может равняться 0!")
+                self.show_errwin.show()
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
                 self.line_Per_in.setText("Обязательное поле")
                 if self.dark_value:
@@ -861,9 +876,9 @@ class OBRwin(QWidget):
             self.line_Epoch_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
             if self.err_key == 1:
                 self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key ==2 or self.err_key == 5:
+            elif self.err_key ==2 or self.err_key == 5 or self.err_key == 8:
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key == 3 or self.err_key == 4:
+            elif self.err_key == 3 or self.err_key == 4 or self.err_key == 7:
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
         else:
             self.dark_value = False
@@ -874,9 +889,9 @@ class OBRwin(QWidget):
             self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
             if self.err_key == 1:
                 self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key ==2 or self.err_key == 5:
+            elif self.err_key ==2 or self.err_key == 5 or self.err_key == 8:
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            elif self.err_key == 3 or self.err_key == 4:
+            elif self.err_key == 3 or self.err_key == 4 or self.err_key == 7:
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
 
     def preview(self):
@@ -898,6 +913,9 @@ class registrWin(QWidget):
         with open("setting.txt") as f:
             self.path_star = f.readline().split("\n")[0]
         self.key_err = 0
+        self.settig = ""
+        self.show_errwin = ""
+        self.dark_value = False
 
     def initUI(self):
         user = ctypes.windll.user32
@@ -1035,7 +1053,8 @@ class registrWin(QWidget):
     def closeEvent(self, event):
         if self.settig != "":
             self.settig.close()
-            self.settig = ""
+        if self.show_errwin != "":
+            self.show_errwin.close()
 
     def resizeEvent(self, event):
         self.settings_btn.move(self.width() - 200, 200)
@@ -1081,52 +1100,83 @@ class registrWin(QWidget):
     def create_file(self):
         if self.star_name_in.text() == "" or self.star_name_in.text() == "Обязательное поле":
             self.star_name_in.setText("Обязательное поле")
-            if self.key_err == 2:
+            if self.dark_value:
+                self.coor_line_in.setStyleSheet('background: rgb(28, 28, 28)')
+            else:
                 self.coor_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.key_err =1
             self.star_name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.show_errwin = errWind("Укажите имя звезды!")
+            self.show_errwin.show()
         elif self.coor_line_in.text() == "" or self.coor_line_in.text() == "Обязательное поле":
             self.coor_line_in.setText("Обязательное поле")
-            if self.key_err == 1:
+            if self.dark_value:
+                self.star_name_in.setStyleSheet('background: rgb(28, 28, 28)')
+            else:
                 self.star_name_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.key_err =2
             self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.show_errwin = errWind("Укажите координаты звезды!")
+            self.show_errwin.show()
+        elif not(is_coord(self.coor_line_in.text())):
+            self.key_err = 3
+            if self.dark_value:
+                self.star_name_in.setStyleSheet('background: rgb(28, 28, 28)')
+            else:
+                self.star_name_in.setStyleSheet('background: rgb(248, 248, 255);')
+            self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.show_errwin = errWind("Не правельный формат координат!\nФормат хх хх хх.ххх ±хх хх хх.ххх\nПример 23 56 32.019 +00 18 25.14")
+            self.show_errwin.show()
         else:
+            self.key_err = 0
             mp = ["M", "SR"]
             mip = ["EA"]
 
             stn = self.star_name_in.text()
             p = self.path_star + "\ "[0] +stn
+            try:
+                if self.oth_name_in.toPlainText() == "":
+                    o = OtherName(self.coor_line_in.text())
+                    a = o.getname()
+                    stroka_oth_name = ""
+                    for i in range(len(a)):
+                        stroka_oth_name += a[i][0]+"   "+ a[i][1] + "\n"
+                    self.oth_name_in.setPlainText(stroka_oth_name)
+            except:
+                self.show_errwin = errWind("Не удалось получить обозначения в каталогах!")
+                self.show_errwin.show()
+                return -1
 
-            if self.oth_name_in.toPlainText() == "":
-                o = OtherName(self.coor_line_in.text())
-                a = o.getname()
-                stroka_oth_name = ""
-                for i in range(len(a)):
-                    stroka_oth_name += a[i][0]+"   "+ a[i][1] + "\n"
-                self.oth_name_in.setPlainText(stroka_oth_name)
             try:
                 makedirs(p)
             except:
                 pass
+            try:
+                if self.min_mag_in.text() == "" or self.max_mag_in.text() == "":
+                    ztf = ZTF_Points(self.coor_line_in.text(), p, True)
+                    z,mag = ztf.points()
+                    self.max_mag_in.setText(str(round(mag[0], 1)))
+                    self.max_mag_filter.setCurrentText(mag[2])
+                    self.min_mag_in.setText(str(round(mag[1], 1)))
+                    self.min_mag_filter.setCurrentText(mag[2])
+                else:
+                    ztf = ZTF_Points(self.coor_line_in.text(), p, False)
+                    z = ztf.points()
+            except:
+                self.show_errwin = errWind("Не удалось получить данные наблюдений!")
+                self.show_errwin.show()
+                return -1
 
-            if self.min_mag_in.text() == "" or self.max_mag_in.text() == "":
-                ztf = ZTF_Points(self.coor_line_in.text(), p, True)
-                z,mag = ztf.points()
-                self.max_mag_in.setText(str(round(mag[0], 1)))
-                self.max_mag_filter.setCurrentText(mag[2])
-                self.min_mag_in.setText(str(round(mag[1], 1)))
-                self.min_mag_filter.setCurrentText(mag[2])
-            else:
-                ztf = ZTF_Points(self.coor_line_in.text(), p, False)
-                z = ztf.points()
-            if self.per_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
+            if (self.per_line_in.text() == "" or self.Epoch_line_in.text() == "") and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
                 if self.type_line_in.currentText() in mp:
                     per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
                 else:
                     per, ep = map(str, Lafler_clinman(p + "\ "[0] + z[0], max=False))
-                self.per_line_in.setText(per)
-                self.Epoch_line_in.setText(ep)
+                if self.per_line_in.text() == "":
+                    self.per_line_in.setText(per)
+                if self.Epoch_line_in.text() == "":
+                    self.Epoch_line_in.setText(ep)
+
             if z != []:
                 m = []
                 for i in range(len(z)):
