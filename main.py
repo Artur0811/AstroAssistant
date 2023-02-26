@@ -40,6 +40,41 @@ color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(2
 }
 '''
 
+def eclipse_percent(path):
+    data = []
+    s = {}
+    with open(path) as f:
+        for i in f:
+            a = list(map(float, i.split()))
+            data.append(a)
+            if round(a[1], 1) in s:
+                s[round(a[1], 1)] +=1
+            else:
+                s[round(a[1], 1)] = 1
+    ma = [0, 0]
+    for i in s:
+        if s[i]>ma[0]:
+            ma[0] = s[i]
+            ma[1] = i
+    data = sorted(filter(lambda x :-0.5<=x[0]<=0.5,data), key=lambda x:x[0])
+    znach = []
+    pred = 0
+    value_mi = False
+    for i in range(len(data)):
+        if data[i][1] - ma[1] > 0.05:
+            if not(value_mi):
+                pred = data[i][0]
+                value_mi = True
+        else:
+            if value_mi:
+                value_mi = False
+                znach.append(data[i][0] - pred)
+    eclipse = max(znach)*100
+    if eclipse%1>0.2:
+        return math.ceil(eclipse)
+    else:
+        return math.floor(eclipse)
+
 def is_coord(value):
     match = re.fullmatch(r"\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}\s[+-]\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}", value)
     return True if match else False
@@ -385,7 +420,7 @@ class LightCurve:
             g.make()
         return correct_epoch
 
-def is_foat(value):
+def is_float(value):
     match1 = re.fullmatch(r"\d{1,}\.\d{0,}", value)
     match2 = re.fullmatch(r"\d{1,}", value)
     return (True if match1 else False) or (True if match2 else False)
@@ -498,14 +533,14 @@ class setting(QWidget):
             self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.err_win = errWind("Папка не найдена!")
             self.err_win.show()
-        elif not(is_foat(self.max_period_in.text())):
+        elif not(is_float(self.max_period_in.text())):
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.err_win = errWind("Укажите число!")
             self.err_win.show()
-        elif not(is_foat(self.min_period_in.text())):
+        elif not(is_float(self.min_period_in.text())):
             self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
@@ -641,12 +676,12 @@ class OBRwin(QWidget):
         self.line_Epoch_in.setMaxLength(50)
 
         self.line_F = QLabel(self)
-        self.line_F.setText("Fiel path:")
+        self.line_F.setText("File path:")
         self.line_F.move(100, 150)
 
         self.line_F_in = QLineEdit(self)
         self.line_F_in.setGeometry(300, 150, 200, 25)
-        self.line_F_in.setMaxLength(80)
+        self.line_F_in.setMaxLength(200)
 
         self.line_btn = QPushButton(self)
         self.line_btn.setGeometry(500, 150, 50,25)
@@ -791,7 +826,7 @@ class OBRwin(QWidget):
                 self.err_key = 2
                 self.show_errwin = errWind("Вы указали период! Укажите эпоху!")
                 self.show_errwin.show()
-            elif not(is_foat(self.line_Per_in.text())) and self.line_Per_in.text() != "":
+            elif not(is_float(self.line_Per_in.text())) and self.line_Per_in.text() != "":
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                 self.err_key = 4
                 if self.dark_value:
@@ -800,7 +835,7 @@ class OBRwin(QWidget):
                     self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.show_errwin = errWind("Период должен быть числом!")
                 self.show_errwin.show()
-            elif not(is_foat(self.line_Epoch_in.text())) and self.line_Epoch_in.text() != "":
+            elif not(is_float(self.line_Epoch_in.text())) and self.line_Epoch_in.text() != "":
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                 self.err_key = 5
                 if self.dark_value:
@@ -809,24 +844,25 @@ class OBRwin(QWidget):
                     self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.show_errwin = errWind("Эпоха должна быть числом!")
                 self.show_errwin.show()
-            elif float(self.line_Per_in.text()) == 0:
-                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.err_key = 7
-                if self.dark_value:
-                    self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
-                else:
-                    self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
-                self.show_errwin = errWind("Период не может равняться 0 !")
-                self.show_errwin.show()
-            elif float(self.line_Epoch_in.text()) == 0:
-                self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.err_key = 8
-                if self.dark_value:
-                    self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
-                else:
-                    self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
-                self.show_errwin = errWind("Эпоха не может равняться 0!")
-                self.show_errwin.show()
+            elif is_float(self.line_Per_in.text()) or is_float(self.line_Epoch_in.text()):
+                if float(self.line_Per_in.text()) == 0:
+                    self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                    self.err_key = 7
+                    if self.dark_value:
+                        self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                    else:
+                        self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                    self.show_errwin = errWind("Период не может равняться 0 !")
+                    self.show_errwin.show()
+                elif float(self.line_Epoch_in.text()) == 0:
+                    self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                    self.err_key = 8
+                    if self.dark_value:
+                        self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                    else:
+                        self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                    self.show_errwin = errWind("Эпоха не может равняться 0!")
+                    self.show_errwin.show()
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
                 self.line_Per_in.setText("Обязательное поле")
                 if self.dark_value:
@@ -1038,7 +1074,7 @@ class registrWin(QWidget):
         self.panstarrs_rem_ok.clicked.connect(self.PanStarrs)
 
         self.comm_line = QLabel(self)
-        self.comm_line.setText("Revizion comment")
+        self.comm_line.setText("Revision comment")
         self.comm_line.move(100, 750)
 
         self.comm_line_in = QPlainTextEdit(self)
@@ -1190,12 +1226,17 @@ class registrWin(QWidget):
                         m.append([p + "\ "[0] + "Other" + z[i][4] + "P.txt", z[i][4]])
                     else:
                         m.append([p+"\ "[0]+z[i],z[i][4]])
+
                 if self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip:
                     gr =makeGrapf(m, p, self.star_name_in.text(), True)
                     gr.make()
                 else:
                     gr = makeGrapf(m, p, self.star_name_in.text())
                     gr.make()
+
+                if self.eclipse_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
+                    eclips_value = eclipse_percent(m[0][0])
+                    self.eclipse_line_in.setText(str(eclips_value))
 
             p1 = p+"\ "[0] + stn + ".txt"
             with open(p1, "w") as f:
