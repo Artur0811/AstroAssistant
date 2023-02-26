@@ -844,25 +844,25 @@ class OBRwin(QWidget):
                     self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.show_errwin = errWind("Эпоха должна быть числом!")
                 self.show_errwin.show()
-            elif is_float(self.line_Per_in.text()) or is_float(self.line_Epoch_in.text()):
-                if float(self.line_Per_in.text()) == 0:
-                    self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                    self.err_key = 7
-                    if self.dark_value:
-                        self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
-                    else:
-                        self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
-                    self.show_errwin = errWind("Период не может равняться 0 !")
-                    self.show_errwin.show()
-                elif float(self.line_Epoch_in.text()) == 0:
-                    self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                    self.err_key = 8
-                    if self.dark_value:
-                        self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
-                    else:
-                        self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
-                    self.show_errwin = errWind("Эпоха не может равняться 0!")
-                    self.show_errwin.show()
+            # elif is_float(self.line_Per_in.text()) or is_float(self.line_Epoch_in.text()):
+            #     if float(self.line_Per_in.text()) == 0:
+            #         self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            #         self.err_key = 7
+            #         if self.dark_value:
+            #             self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+            #         else:
+            #             self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+            #         self.show_errwin = errWind("Период не может равняться 0 !")
+            #         self.show_errwin.show()
+            #     elif float(self.line_Epoch_in.text()) == 0:
+            #         self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            #         self.err_key = 8
+            #         if self.dark_value:
+            #             self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+            #         else:
+            #             self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+            #         self.show_errwin = errWind("Эпоха не может равняться 0!")
+            #         self.show_errwin.show()
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
                 self.line_Per_in.setText("Обязательное поле")
                 if self.dark_value:
