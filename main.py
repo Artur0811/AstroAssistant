@@ -1,9 +1,9 @@
 import sys, ctypes,math
-
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox, QMainWindow, QGridLayout, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QComboBox, QMainWindow, QGridLayout, QSizePolicy, \
+    QVBoxLayout, QScrollArea
 from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox, QPlainTextEdit, QFileDialog
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QFont
 import seaborn as sns
 import matplotlib.pyplot as pyp
 import pandas as pn
@@ -11,7 +11,6 @@ import os
 from os import makedirs
 import requests
 import re
-import csv
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageStat
 from astropy.io import fits
 
@@ -47,10 +46,10 @@ def eclipse_percent(path):
         for i in f:
             a = list(map(float, i.split()))
             data.append(a)
-            if round(a[1], 1) in s:
-                s[round(a[1], 1)] +=1
+            if round(a[1], 2) in s:
+                s[round(a[1], 2)] +=1
             else:
-                s[round(a[1], 1)] = 1
+                s[round(a[1], 2)] = 1
     ma = [0, 0]
     for i in s:
         if s[i]>ma[0]:
@@ -61,7 +60,7 @@ def eclipse_percent(path):
     pred = 0
     value_mi = False
     for i in range(len(data)):
-        if data[i][1] - ma[1] > 0.05:
+        if data[i][1] - ma[1] > 0.15:
             if not(value_mi):
                 pred = data[i][0]
                 value_mi = True
@@ -78,6 +77,29 @@ def eclipse_percent(path):
 def is_coord(value):
     match = re.fullmatch(r"\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}\s[+-]\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}", value)
     return True if match else False
+
+def fiend_err(wids, style, min_err_key):
+    k = min_err_key
+    for i in range(len(wids)):
+        if wids[i].text() != "":
+            if not(is_float(wids[i].text())):
+                wids[i].setStyleSheet(style)
+                return k
+        k+=1
+    return 0
+
+def normal_wid(wids, style):
+    for i in range(len(wids)):
+        wids[i].setStyleSheet(style)
+
+def LK1(a):
+    s = 0
+    for i in range(len(a)):
+        s += (a[i][1] - a[i - 1][1]) ** 2
+    return s
+
+def drob(n):
+    return n - math.floor(n)
 
 def Lafler_clinman(name, max = True):
     with open(name) as f:
@@ -102,17 +124,7 @@ def Lafler_clinman(name, max = True):
             step = float(file[4].split()[1])
         wmin = 1 / pmax
         wmax = 1 / pmin
-
-        def drob(n):
-            return n - math.floor(n)
-
         p = []
-
-        def LK1(a):
-            s = 0
-            for i in range(len(a)):
-                s += (a[i][1] - a[i - 1][1]) ** 2
-            return s
 
         while wmin <= wmax:
             b = []
@@ -124,7 +136,7 @@ def Lafler_clinman(name, max = True):
 
         p = sorted(p, key=lambda x: x[0])
         per_n = p[0][1]
-    return round(per_n, 7), ep0
+    return round(per_n, 7), round(ep0, 3)
 
 class OtherName:
     def __init__(self, cor):
@@ -134,18 +146,27 @@ class OtherName:
         req = requests.get(self.silka)
         a = req.text
         a = a.split()
+        s = {}
         for i in range(len(a)):
             if "urat1&amp" in a[i]:
                 if 'NOWRAP' in a[i+3]:
-                    self.other.append(["URAT1", a[i+3][7:17]])
+                    if "URAT1" not in s:
+                        self.other.append(["URAT1", a[i+3][7:17]])
+                        s["URAT1"] = ""
             if a[i].count("galex_ais")==1 and a[i+7] == "NOWRAP>GALEX" and "J" in a[i+8]:
-                self.other.append(["GALEX", a[i+8][:-5]])
+                if "GALEX" not in s:
+                    self.other.append(["GALEX", a[i+8][:-5]])
+                    s["GALEX"] = ""
             if "===" in a[i] and "AllWISE" not in a[i]:
                 b = a[i].split(";")
                 b = re.split("===|&|'", b[3])
                 if "%2b" in b[1]:
                     b[1] = r"{}+{}".format(*b[1].split("%2b"))
-                self.other.append([b[0], b[1]])
+                if b[0] == "2MASS":
+                    b[1] = "J"+b[1]
+                if b[0] not in s:
+                    self.other.append([b[0], b[1]])
+                    s[b[0]] = ""
         return self.other
 
 class ZTF_Points:
@@ -180,38 +201,44 @@ class ZTF_Points:
         if name_g != []:
             if self.mag:#
                 g_mag = [100, -100, "g"]
-            ret.append('ztf_g.txt')#записываю что сделал файл с наблюдениями в фильтре g
             name_g = max(name_g, key=lambda x:x[1])[0]#выбираю тот набор в котором больше всего наблюдений
             data = requests.get(self.ssilka2.format(name_g)).text.split()#получаю данные наблюдений
-            with open(self.fiel_name+"\ztf_g.txt", "w") as f:
-                for i in range(len(data)):
-                    if data[i] == "<TR>":
-                        f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
-                        if self.mag:
-                            if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0] and len(data[i + 7])<11:#код ошибки наблюдений на i+7
-                                g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
-                            if float(re.split("<|>", data[i + 5])[2][:6]) > g_mag[1] and len(data[i + 7])<11:
-                                g_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
-            if self.mag:
-                magn.append(g_mag)
+            if "<TR>" in data:
+                kol = 0
+                with open(self.fiel_name+"\ztf_g.txt", "w") as f:
+                    for i in range(len(data)):
+                        if data[i] == "<TR>":
+                            kol+=1
+                            f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
+                            if self.mag:
+                                if float(re.split("<|>", data[i + 5])[2][:6]) < g_mag[0] and len(data[i + 7])<11:#код ошибки наблюдений на i+7
+                                    g_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
+                                if float(re.split("<|>", data[i + 5])[2][:6]) > g_mag[1] and len(data[i + 7])<11:
+                                    g_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
+                    ret.append(['ztf_g.txt', kol])  # записываю что сделал файл с наблюдениями в фильтре g
+                if self.mag:
+                    magn.append(g_mag)
 
         if name_r != []:
             if self.mag:
                 r_mag = [100, -100, "r"]
-            ret.append('ztf_r.txt')#записываю что сделал файл с наблюдениями в фильтре r
             name_r = max(name_r, key=lambda x: x[1])[0]#выбираю тот набор в котором больше всего наблюдений
             data = requests.get(self.ssilka2.format(name_r)).text.split()#получаю данные наблюдений
-            with open(self.fiel_name + "\ztf_r.txt", "w") as f:
-                for i in range(len(data)):
-                    if data[i] == "<TR>":
-                        f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
-                        if self.mag:
-                            if float(re.split("<|>", data[i + 5])[2][:6]) < r_mag[0] and len(data[i + 7])<11:
-                                r_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
-                            if float(re.split("<|>", data[i + 5])[2][:6]) > r_mag[1] and len(data[i + 7])<11:
-                                r_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
-            if self.mag:
-                magn.append(r_mag)
+            if "<TR>" in data:
+                kol = 0
+                with open(self.fiel_name + "\ztf_r.txt", "w") as f:
+                    for i in range(len(data)):
+                        if data[i] == "<TR>":
+                            kol+=1
+                            f.writelines(re.split("<|>", data[i + 4])[2][:12] + " " + re.split("<|>", data[i + 5])[2][:6] + "\n")#записываю наблюдения в формате дата/наблюдение
+                            if self.mag:
+                                if float(re.split("<|>", data[i + 5])[2][:6]) < r_mag[0] and len(data[i + 7])<11:
+                                    r_mag[0]=float(re.split("<|>", data[i + 5])[2][:6])
+                                if float(re.split("<|>", data[i + 5])[2][:6]) > r_mag[1] and len(data[i + 7])<11:
+                                    r_mag[1] = float(re.split("<|>", data[i + 5])[2][:6])
+                    ret.append(['ztf_r.txt', kol])  # записываю что сделал файл с наблюдениями в фильтре r
+                if self.mag:
+                    magn.append(r_mag)
         if self.mag:
             return ret ,max(magn, key=lambda x: abs(x[0]- x[1]))
         return ret
@@ -225,25 +252,23 @@ class makeGrapf:#создает график из данных файла. фо�
     def make(self):
         ymin = 99
         ymax = 0
-        with open(self.savef+"\data.csv", "w") as fi:
-            fiel = csv.writer(fi)
-            fiel.writerow(["x", "y", "data"])
-            for i in range(len(self.path)):
-                x = []
-                y = []
-                fil = self.path[i][1]
-                with open(self.path[i][0]) as f:
-                    for i in f:
-                        x.append(float(i.split()[0]))
-                        y.append(float(i.split()[1]))
-                        fiel.writerow([str(i.split()[0]), str(i.split()[1]), fil])
+        x = []
+        y = []
+        value = []
+        for i in range(len(self.path)):
+            fil = self.path[i][2]+" "+self.path[i][1]
+            with open(self.path[i][0]) as f:
+                for i in f:
+                    x.append(float(i.split()[0]))
+                    y.append(float(i.split()[1]))
+                    value.append(fil)
                 mi, ma = min(y), max(y)
                 if mi < ymin:
                     ymin = mi
                 if ma > ymax:
                     ymax = ma
-        data = pn.read_csv(self.savef+"\data.csv")
-        color = dict({"r":"#f80000", "g":"#000080", "c" : "#40734f",  "o":"#f5770a"})
+        data = pn.DataFrame({"x":x, "y":y, "data":value})
+        color = {"ZTF r":"#f80000", "ZTF g":"#000080", "Atlas c" : "#40734f",  "Atlas o":"#f5770a", "ZTF i":"#ff4d00"}
         g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
         g.figure.set_figheight(8)
@@ -253,11 +278,12 @@ class makeGrapf:#создает график из данных файла. фо�
             pyp.title(self.name, fontsize=23)
             pyp.ylabel("Magnitude", fontsize=18)
             pyp.xlabel("Phase", fontsize=18)
+            pyp.savefig(self.savef + "\ "[0] + self.name + "Phase.png")
         else:
             pyp.title(self.name, fontsize=23)
             pyp.ylabel("Magnitude", fontsize=18)
             pyp.xlabel("MJD", fontsize=18)
-        pyp.savefig(self.savef+"\ "[0]+self.name+".png")
+            pyp.savefig(self.savef + "\ "[0] + self.name + "LC.png")
         pyp.close()
 
 
@@ -292,9 +318,10 @@ class LightCurve:
                     if a[i]!= '':
                         f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
             if self.make:
-                g = makeGrapf([[b, self.filter]], self.new_fiel, "preview")
+                g = makeGrapf([[b, self.filter, self.by]], self.new_fiel, "preview")
                 g.make()
-        if self.by == "Atlass":
+
+        if self.by == "Atlas":
             o = self.new_fiel+'\ '[0]+self.by+'o.txt'
             o1 = o
             c = self.new_fiel+'\ '[0] +self.by+'c.txt'
@@ -304,14 +331,15 @@ class LightCurve:
                     for i in range(1, len(a)):
                         if a[i] != '':
                             r = a[i].split()
-                            if '-' not in r[1] and len(r[3]) <6:
+                            if '-' not in r[1] and len(r[3]) <6 and float(r[2])<1.5:
                                 if r[5] == 'c':
                                     f2.writelines(r[0] +' '+ r[1]+'\n')
                                 if r[5] == "o":
                                     f1.writelines(r[0] +' '+ r[1]+'\n')
             if self.make:
-                g1 = makeGrapf([[o1, "o"],[c1, "c"]], self.new_fiel, "preview")
+                g1 = makeGrapf([[o1, "o", "Atlas"],[c1, "c", "Atlas"]], self.new_fiel, "preview")
                 g1.make()
+
         if self.by == "Other":
             c = self.new_fiel + "\ "[0] + self.by + self.filter + ".txt"
             b = c
@@ -320,9 +348,10 @@ class LightCurve:
                     if a[i] != '':
                         f.writelines(a[i].split()[0] + " " + a[i].split()[1] + "\n")
             if self.make:
-                g = makeGrapf([[b, self.filter]], self.new_fiel, "preview")
+                g = makeGrapf([[b, self.filter, self.by]], self.new_fiel, "preview")
                 g.make()
-    def  make_LightCurve_with_per(self, fep = True):
+
+    def make_LightCurve_with_per(self, fep = True):
         with open(self.path) as f:
             a = f.read().split("\n")
         c = self.new_fiel + "\ "[0] + self.by + self.filter + "P.txt"
@@ -353,6 +382,38 @@ class LightCurve:
                     correct_epoch = self.make_epoch(float(min_[0]))
                 else:
                     correct_epoch = float(self.epoch)
+
+            if self.by == "Atlas":
+                for i in range(17, len(a)):
+                    r = a[i].split()
+                    if a[i] != '' and "-" not in r[1] and float(r[2]) < 1.5 and len(r[3]) < 6:
+                        a[i] = [r[0], r[1], r[5]]
+                        if float(a[i][1]) > min_[1]:
+                            min_ = [float(a[i][0]), float(a[i][1])]
+                if fep:
+                    correct_epoch = self.make_epoch(min_[0])
+                else:
+                    correct_epoch = float(self.epoch)
+                ft1= self.new_fiel + "\ "[0] + self.by + "oP.txt"
+                ft2 = self.new_fiel + "\ "[0] + self.by + "cP.txt"
+                f1 = ft1
+                f2 = ft2
+                with open(f1, "w") as of1:
+                    with open(f2, "w") as of2:
+                        for i in range(1, len(a)):
+                            if len(a[i]) == 3:
+                                rez = (float(a[i][0]) - correct_epoch) / float(self.period)
+                                rez_c = round(rez) - 1
+                                if a[i][2] == "c":
+                                    of2.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                                    of2.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
+                                else:
+                                    of1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                                    of1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
+
+                if self.make:
+                    g = makeGrapf([[f1, "o", "Atlas"], [f2, "c", "Atlas"]], self.new_fiel, "preview", phase= True)
+                    g.make()
         else:
             max_ = [30, 30]
             if self.by == "ZTF":
@@ -378,34 +439,40 @@ class LightCurve:
                     correct_epoch = self.make_epoch(float(max_[0]))
                 else:
                     correct_epoch = float(self.epoch)
-            if self.by == "Atlass":
+
+            if self.by == "Atlas":
                 for i in range(17, len(a)):
                     r = a[i].split()
                     if a[i] != '' and "-" not in r[1] and float(r[2]) < 1.5 and len(r[3]) < 6:
                         a[i] = [r[0], r[1], r[5]]
                         if float(a[i][1]) < max_[1]:
                             max_ = [float(a[i][0]), float(a[i][1])]
+
                 if fep:
                     correct_epoch = self.make_epoch(max_[0])
                 else:
                     correct_epoch = float(self.epoch)
-
                 ft1= self.new_fiel + "\ "[0] + self.by + "oP.txt"
                 ft2 = self.new_fiel + "\ "[0] + self.by + "cP.txt"
                 f1 = ft1
                 f2 = ft2
-                with open(f1, "w") as f1:
-                    with open(f2, "w") as f2:
+                with open(f1, "w") as of1:
+                    with open(f2, "w") as of2:
                         for i in range(1, len(a)):
-                            if a[i] != '':
+                            if len(a[i]) == 3:
                                 rez = (float(a[i][0]) - correct_epoch) / float(self.period)
                                 rez_c = round(rez) - 1
                                 if a[i][2] == "c":
-                                    f2.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                                    f2.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
+                                    of2.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                                    of2.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
                                 else:
-                                    f1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                                    f1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
+                                    of1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
+                                    of1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
+
+                if self.make:
+                    g = makeGrapf([[f1, "o", "Atlas"], [f2, "c", "Atlas"]], self.new_fiel, "preview", phase= True)
+                    g.make()
+
         if self.by != "Atlas":
             with open(b, "w") as f:
                 for i in range(len(a)):
@@ -415,9 +482,9 @@ class LightCurve:
                         f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
                         f.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
 
-        if self.make:
-            g = makeGrapf([[b, self.filter]], self.new_fiel, "preview", phase=True)
-            g.make()
+            if self.make:
+                g = makeGrapf([[b, self.filter, self.by]], self.new_fiel, "preview", phase=True)
+                g.make()
         return correct_epoch
 
 def is_float(value):
@@ -450,12 +517,52 @@ class vari(QWidget):
         self.plate_OBR.setText("Plates")
         self.plate_OBR.setGeometry(500, 50, 175, 300)
 
+class about_program(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setFixedSize(700, 600)
+        user = ctypes.windll.user32
+        self.move(user.GetSystemMetrics(0) // 2 - 350, user.GetSystemMetrics(1) // 2 - 300)
+        self.setWindowTitle("about_program")
+        self.scroll = QScrollArea()
+        self.widget = QWidget()
+        self.vbox = QVBoxLayout()
+
+        with open("about.txt", encoding="utf-8") as f:
+            for text in f:
+                object = QLabel(text.strip())
+                if "?" in text:
+                    object.setStyleSheet("color: #005de0")
+                if "https" in text:
+                    object = QLabel(self)
+                    object.setText('<a href="https://www.aavso.org/vsx/index.php?view=about.vartypes">Типы переменных звезд</a>')
+                    object.setOpenExternalLinks(True)
+                font = QFont()
+                font.setPixelSize(18)
+                object.setFont(font)
+                object.setWordWrap(True)
+                self.vbox.addWidget(object)
+
+        self.widget.setLayout(self.vbox)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(self.widget)
+        self.setCentralWidget(self.scroll)
+        self.show()
+
+
 class setting(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
         self.successfully =False
         self.err_win = ""
+        self.information = ""
 
     def initUI(self):
         self.setFixedSize(700, 600)
@@ -518,6 +625,14 @@ class setting(QWidget):
         self.butn.setText("ok")
         self.butn.setGeometry(300, 425, 100, 50)
 
+        self.inf_btn = QPushButton(self)
+        self.inf_btn.setText("О программе")
+        self.inf_btn.setGeometry(self.width() - 150, 50, 100, 50)
+        self.inf_btn.clicked.connect(self.inform_show)
+
+    def inform_show(self):
+        self.information = about_program()
+
     def chek_value(self):
         if not(os.path.isdir(self.Fiel_line_in.text())):
             self.Fiel_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
@@ -571,6 +686,8 @@ class setting(QWidget):
         if self.err_win != "":
             self.err_win.close()
             self.err_win = ""
+        if self.information != "":
+            self.information.close()
 
     def start(self):
         with open("setting.txt", "w") as f:
@@ -652,6 +769,7 @@ class OBRwin(QWidget):
         self.settig = ""
         self.show_errwin = ""
         self.dark_value = False
+        self.information = ""
 
     def initUI(self):
         user = ctypes.windll.user32
@@ -713,7 +831,7 @@ class OBRwin(QWidget):
 
         self.data_box = QComboBox(self)
         self.data_box.setGeometry(300, 200, 100, 25)
-        self.data_box.addItem("Atlass")
+        self.data_box.addItem("Atlas")
         self.data_box.addItem("ZTF")
         self.data_box.addItem("Other")
 
@@ -759,12 +877,22 @@ class OBRwin(QWidget):
         self.settings_btn.setGeometry(self.width() - 200, 250, 100, 50)
         self.settings_btn.clicked.connect(self.show_settings)
 
+        self.inf_btn = QPushButton(self)
+        self.inf_btn.setText("О программе")
+        self.inf_btn.setGeometry(self.width()-200, 300, 100, 50)
+        self.inf_btn.clicked.connect(self.inform_show)
+
+    def inform_show(self):
+        self.information = about_program()
+
     def closeEvent(self, event):
         if self.settig != "":
             self.settig.close()
             self.settig = ""
         if self.show_errwin != "":
             self.show_errwin.close()
+        if self.information != "":
+            self.information.close()
 
     def resizeEvent(self, event):
         self.settings_btn.move(self.width() - 200, 250)
@@ -773,6 +901,7 @@ class OBRwin(QWidget):
         self.beak_btn.move(self.width()- 200, 150)
         self.butn2.move(self.width() - 200, 100)
         self.butn1.move(self.width()//2 - 50, 500)
+        self.inf_btn.move(self.width() - 200, 300)
 
     def show_settings(self):
         self.settig = setting()
@@ -844,25 +973,6 @@ class OBRwin(QWidget):
                     self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
                 self.show_errwin = errWind("Эпоха должна быть числом!")
                 self.show_errwin.show()
-            # elif is_float(self.line_Per_in.text()) or is_float(self.line_Epoch_in.text()):
-            #     if float(self.line_Per_in.text()) == 0:
-            #         self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            #         self.err_key = 7
-            #         if self.dark_value:
-            #             self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
-            #         else:
-            #             self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
-            #         self.show_errwin = errWind("Период не может равняться 0 !")
-            #         self.show_errwin.show()
-            #     elif float(self.line_Epoch_in.text()) == 0:
-            #         self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            #         self.err_key = 8
-            #         if self.dark_value:
-            #             self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
-            #         else:
-            #             self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
-            #         self.show_errwin = errWind("Эпоха не может равняться 0!")
-            #         self.show_errwin.show()
             elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
                 self.line_Per_in.setText("Обязательное поле")
                 if self.dark_value:
@@ -874,16 +984,40 @@ class OBRwin(QWidget):
                 self.show_errwin = errWind("Вы указали эпоху! Укажите период!")
                 self.show_errwin.show()
             else:
-                if self.dark_value:
-                    self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
-                    self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
-                else:
-                    self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
-                    self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                self.err_key = 0
+                if self.line_Epoch_in.text() != "":
+                    if float(self.line_Per_in.text()) == 0:
+                        self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                        self.err_key = 7
+                        if self.dark_value:
+                            self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                        else:
+                            self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                        self.show_errwin = errWind("Период не может равняться 0!")
+                        self.show_errwin.show()
+                    elif float(self.line_Epoch_in.text()) == 0:
+                        self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                        self.err_key = 8
+                        if self.dark_value:
+                            self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                        else:
+                            self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+                        self.show_errwin = errWind("Эпоха не может равняться 0!")
+                        self.show_errwin.show()
+                    else:
+                        self.err_key = 0
+                        if self.dark_value:
+                            self.line_Epoch_in.setStyleSheet('background: rgb(28, 28, 28)')
+                            self.line_Per_in.setStyleSheet('background: rgb(28, 28, 28)')
+                        else:
+                            self.line_Epoch_in.setStyleSheet('background: rgb(248, 248, 255);')
+                            self.line_Per_in.setStyleSheet('background: rgb(248, 248, 255);')
+
+            if self.err_key == 0:
                 if self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
                     otvet = LightCurve(self.line_Per_in.text(), self.line_F_in.text(), self.type_box.currentText(),
-                                       self.data_box.currentText(), self.line_Epoch_in.text(),
-                                       self.filter_box.currentText(), self.name_per_fiel, self.make)
+                                           self.data_box.currentText(), self.line_Epoch_in.text(),
+                                           self.filter_box.currentText(), self.name_per_fiel, self.make)
                     try:
                         rezult = otvet.make_LightCurve_with_per()
                         self.val_Ep_in.setText(str(rezult)[:10])
@@ -936,7 +1070,10 @@ class OBRwin(QWidget):
         self.count()
         self.make = a
         if self.err_key == 0:
-            a = self.name_per_fiel+"/"+"preview.png"
+            if self.line_Per_in.text() != "":
+                a = self.name_per_fiel+"/"+"previewPhase.png"
+            else:
+                a = self.name_per_fiel + "/" + "previewLC.png"
             self.wp = previewwin(a)
             self.wp.show()
 
@@ -951,6 +1088,7 @@ class registrWin(QWidget):
         self.key_err = 0
         self.settig = ""
         self.show_errwin = ""
+        self.information = ""
         self.dark_value = False
 
     def initUI(self):
@@ -1010,8 +1148,20 @@ class registrWin(QWidget):
         self.type_line_in_n.setGeometry(300, 400, 200, 25)
 
         self.type_line_in = QComboBox(self)
-        self.type_line_in.addItems(["EA","EB","EW", "UG", "UGSU", "UGSS", "RR", "RS", "M", "BY", "RRC", "RRB", "L"])
-        self.type_line_in.move(150, 400)
+        self.type_line_in.addItems(sorted(['ACEP', 'ACV', 'ACYG', 'AHB1', 'AM', 'BCEP', 'BCEPS', 'BE', 'BLAP', 'BXCIR', 'BY',
+                                           'CBSS', 'CBSS/V', 'CEP', 'CTTS', 'CTTS/ROT', 'CW', 'CWA', 'CWB', 'CWB(B)', 'CWBS', 'DCEP',
+                                           'DCEP(B)', 'DCEPS', 'DCEPS(B)', 'DPV', 'DQ', 'DQ/AE', 'DSCT', 'DSCTC', 'DWLYN', 'DYPer',
+                                           'E', 'EA', 'EB', 'ELL', 'EP', 'EW', 'EXOR', 'FF', 'FKCOM', 'FSCMa', 'FUOR', 'GCAS', 'GDOR',
+                                           'HADS', 'HADS(B)', 'HB', 'HMXB', 'I', 'IA', 'IB', 'IBWD', 'IMXB', 'IN', 'INA', 'INAT', 'INB',
+                                           'INS', 'INSA', 'INSB', 'INST', 'INT', 'IS', 'ISA', 'ISB', 'L', 'LB', 'LC', 'LERI', 'LMXB', 'M',
+                                           'N', 'NA', 'NB', 'NC', 'NL', 'NL/VY', 'NR', 'PPN', 'PSR', 'PVTEL', 'PVTELI', 'PVTELII', 'PVTELIII',
+                                           'R', 'RCB', 'ROT', 'RR', 'RRAB', 'RRC', 'RRD', 'RS', 'RV', 'RVA', 'RVB', 'SDOR', 'SN', 'SN I', 'SN II',
+                                           'SN II-L', 'SN II-P', 'SN IIa', 'SN IIb', 'SN IId', 'SN IIn', 'SN Ia', 'SN Ia-CSM', 'SN Iax', 'SN Ib', 'SN Ic',
+                                           'SN Ic-BL', 'SN-pec', 'SPB', 'SPBe', 'SR', 'SRA', 'SRB', 'SRC', 'SRD', 'SRS', 'SXARI', 'SXARI/E', 'SXPHE', 'SXPHE(B)',
+                                           'TTS', 'TTS/ROT', 'UG', 'UGER', 'UGSS', 'UGSU', 'UGWZ', 'UGZ', 'UGZ/IW', 'UV', 'UVN',
+                                           'UXOR', 'V1093HER', 'V361HYA', 'V838MON', 'WDP', 'WR', 'WTTS', 'WTTS/ROT', 'X', 'ZAND',
+                                           'ZZ', 'ZZ/GWLIB', 'ZZA', 'ZZA/O', 'ZZB', 'ZZLep', 'ZZO', 'cPNB[e]', 'roAm', 'roAp']))
+        self.type_line_in.setGeometry(150, 400, 75, 25)
 
         self.max_mag = QLabel(self)
         self.max_mag.setText("Максимальная магнитуда")
@@ -1079,18 +1229,28 @@ class registrWin(QWidget):
 
         self.comm_line_in = QPlainTextEdit(self)
         self.comm_line_in.setGeometry(300, 750, 200, 225)
-        self.comm_line_in.setPlainText("GaiaEDR3 position.")
+        self.comm_line_in.setPlainText("Gaia DR3 position.")
 
         self.settings_btn = QPushButton(self)
         self.settings_btn.setText("Настройки")
         self.settings_btn.setGeometry(self.width() - 200, 200, 100, 50)
         self.settings_btn.clicked.connect(self.show_settings)
 
+        self.inf_btn = QPushButton(self)
+        self.inf_btn.setText("О программе")
+        self.inf_btn.setGeometry(self.width() - 200, 250, 100, 50)
+        self.inf_btn.clicked.connect(self.inform_show)
+
+    def inform_show(self):
+        self.information = about_program()
+
     def closeEvent(self, event):
         if self.settig != "":
             self.settig.close()
         if self.show_errwin != "":
             self.show_errwin.close()
+        if self.information != "":
+            self.information.close()
 
     def resizeEvent(self, event):
         self.settings_btn.move(self.width() - 200, 200)
@@ -1098,6 +1258,7 @@ class registrWin(QWidget):
         self.beak_btn.move(self.width()- 200, 150)
         self.dark_btn.move(self.width() - 200, 100)
         self.file_btn.move(self.width()//2 - 50, 500)
+        self.inf_btn.move(self.width() - 200, 250)
 
     def show_settings(self):
         self.settig = setting()
@@ -1114,31 +1275,51 @@ class registrWin(QWidget):
             self.settig.close()
 
     def dark(self):
+        wid = [self.max_mag_in, self.min_mag_in, self.per_line_in, self.Epoch_line_in, self.eclipse_line_in]
         if self.dark_btn.text() == "Dark":
+            self.dark_value = True
             self.dark_btn.setText("White")
             self.setStyleSheet(setstell1)
             if self.key_err == 1:
                 self.star_name_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
                 self.coor_line_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
-            if self.key_err == 2:
+                normal_wid(wid, "color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
+            if self.key_err == 2 or self.key_err == 3:
                 self.star_name_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
                 self.coor_line_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+                normal_wid(wid, "color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
+            if self.key_err >= 4:
+                self.star_name_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
+                self.coor_line_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
+                wid[self.key_err-4].setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
+                normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], "color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
         else:
+            self.dark_value = False
             self.dark_btn.setText("Dark")
             self.setStyleSheet('background: rgb(248, 248, 255);')
             if self.key_err == 1:
                 self.star_name_in.setStyleSheet("background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)")
                 self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255)")
-            if self.key_err == 2:
+                normal_wid(wid, "background: rgb(248, 248, 255)")
+            if self.key_err == 2 or self.key_err == 3:
                 self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)")
                 self.star_name_in.setStyleSheet("background: rgb(248, 248, 255)")
+                normal_wid(wid, "background: rgb(248, 248, 255)")
+            if self.key_err >= 4:
+                self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255)")
+                self.star_name_in.setStyleSheet("background: rgb(248, 248, 255)")
+                wid[self.key_err-4].setStyleSheet("background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)")
+                normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], "background: rgb(248, 248, 255)")
 
     def create_file(self):
+        wid = [self.max_mag_in, self.min_mag_in, self.per_line_in, self.Epoch_line_in, self.eclipse_line_in]
         if self.star_name_in.text() == "" or self.star_name_in.text() == "Обязательное поле":
             self.star_name_in.setText("Обязательное поле")
             if self.dark_value:
+                normal_wid(wid, "color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
                 self.coor_line_in.setStyleSheet('background: rgb(28, 28, 28)')
             else:
+                normal_wid(wid, "background: rgb(248, 248, 255)")
                 self.coor_line_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.key_err =1
             self.star_name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
@@ -1147,8 +1328,10 @@ class registrWin(QWidget):
         elif self.coor_line_in.text() == "" or self.coor_line_in.text() == "Обязательное поле":
             self.coor_line_in.setText("Обязательное поле")
             if self.dark_value:
+                normal_wid(wid, "color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
                 self.star_name_in.setStyleSheet('background: rgb(28, 28, 28)')
             else:
+                normal_wid(wid, "background: rgb(248, 248, 255)")
                 self.star_name_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.key_err =2
             self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
@@ -1157,19 +1340,43 @@ class registrWin(QWidget):
         elif not(is_coord(self.coor_line_in.text())):
             self.key_err = 3
             if self.dark_value:
+                normal_wid(wid, "color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
                 self.star_name_in.setStyleSheet('background: rgb(28, 28, 28)')
             else:
+                normal_wid(wid, "background: rgb(248, 248, 255)")
                 self.star_name_in.setStyleSheet('background: rgb(248, 248, 255);')
             self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.show_errwin = errWind("Не правельный формат координат!\nФормат хх хх хх.ххх ±хх хх хх.ххх\nПример 23 56 32.019 +00 18 25.14")
             self.show_errwin.show()
         else:
             self.key_err = 0
-            mp = ["M", "SR"]
-            mip = ["EA"]
+            if self.dark_value:
+                self.coor_line_in.setStyleSheet("background: rgb(28, 28, 28)")
+                style = "color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)"
+                not_err_style = "background: rgb(28, 28, 28)"
+            else:
+                self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255)")
+                style = "background: rgb(248, 248, 255);border: 2px solid rgb(248, 0, 0)"
+                not_err_style = "background: rgb(248, 248, 255)"
+            self.key_err = fiend_err(wid, style, 4)
+            normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], not_err_style)
+            err_text = {4: "Максимальная магнитуда должена быть числом!", 5: "Минимальная магнитуда должена быть числом!",
+                        6: "Период должен быть числом!",7 :"Эпоха должена быть числом!", 8: "Процент затмения должен быть числом!"}
+            if self.key_err in err_text:
+                self.show_errwin = errWind(err_text[self.key_err])
+                self.show_errwin.show()
+
+        if self.key_err == 0:
+            mp = {'ACV', 'BY', 'CTTS/ROT', 'ELL', 'FKCOM', 'HB', 'LERI', 'PSR', 'R', 'ROT', 'RS', 'SXARI', 'SXARI/E', 'TTS/ROT', 'WTTS/ROT','ACEP',
+                  'ACYG', 'AHB1', 'BCEP', 'BCEPS', 'BLAP', 'BXCIR', 'CEP', 'CW', 'CWA', 'CWB', 'DCEP', 'DCEP(B)', 'DCEPS', 'DCEPS(B)',
+                  'DSCT', 'GDOR', 'HADS', 'HADS(B)', 'L', 'M', 'PPN', 'roAm', 'roAp',
+                  'RR', 'RRAB', 'RRC', 'RRD', 'RV', 'RVA', 'RVB', 'SPB', 'SR', 'SRA', 'SRB', 'SRC', 'SRD', 'SRS', 'SXPHE', 'SXPHE(B)', 'V361HYA',
+                  'V1093HER', 'ZZ', 'ZZ/GWLIB', 'DPV', 'DYPer', 'RCB', 'UVN', 'ZZA/O'}
+            mip = {'E', 'EA', 'EB', 'EP', 'EW'}
 
             stn = self.star_name_in.text()
             p = self.path_star + "\ "[0] +stn
+
             try:
                 if self.oth_name_in.toPlainText() == "":
                     o = OtherName(self.coor_line_in.text())
@@ -1203,39 +1410,65 @@ class registrWin(QWidget):
                 self.show_errwin.show()
                 return -1
 
-            if (self.per_line_in.text() == "" or self.Epoch_line_in.text() == "") and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
-                if self.type_line_in.currentText() in mp:
-                    per ,ep = map(str, Lafler_clinman(p+"\ "[0]+z[0]))
+            current_type = self.type_line_in.currentText()
+            subtype = ""
+            special_type = self.type_line_in_n.text()
+            if special_type != "":
+                if "+" in special_type or '\ '[0] in special_type:
+                    if '\ '[0] in special_type:
+                        delitel = '\ '[0]
+                    else:
+                        delitel = "+"
+                    razd = special_type.split(delitel)
+                    current_type = razd[0]
+                    subtype = razd[1]
                 else:
-                    per, ep = map(str, Lafler_clinman(p + "\ "[0] + z[0], max=False))
+                    current_type = special_type
+
+            if (self.per_line_in.text() == "" or self.Epoch_line_in.text() == "") and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip) or self.per_line_in.text() != "" or subtype == "E":
+                if self.type_line_in.currentText() in mp or self.per_line_in.text() != "":
+                    per, ep = map(str, Lafler_clinman(p+"\ "[0]+max(z, key=lambda x: x[1])[0]))
+                else:
+                    per, ep = map(str, Lafler_clinman(p + "\ "[0] + max(z, key=lambda x: x[1])[0], max=False))
                 if self.per_line_in.text() == "":
                     self.per_line_in.setText(per)
                 if self.Epoch_line_in.text() == "":
                     self.Epoch_line_in.setText(ep)
 
             if z != []:
-                m = []
+                current_path = []
+                special_path = []
                 for i in range(len(z)):
-                    if self.type_line_in.currentText() in mp:
-                        l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Максимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
+                    if current_type not in mip and self.per_line_in.text() != '' and subtype != "E":
+                        l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i][0], "Максимуме", "Other" ,self.Epoch_line_in.text(), z[i][0][4], p)
                         l.make_LightCurve_with_per(False)
-                        m.append([p+"\ "[0]+"Other"+z[i][4]+"P.txt", z[i][4]])
-                    elif self.type_line_in.currentText() in mip:
-                        l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i], "Минимуме", "Other" ,self.Epoch_line_in.text(), z[i][4], p)
+                        current_path.append([p+"\ "[0]+"Other"+z[i][0][4]+"P.txt", z[i][0][4], "ZTF"])
+                    elif current_type in mip:
+                        l = LightCurve(self.per_line_in.text(), p+"\ "[0]+z[i][0], "Минимуме", "Other" ,self.Epoch_line_in.text(), z[i][0][4], p)
                         l.make_LightCurve_with_per(False)
-                        m.append([p + "\ "[0] + "Other" + z[i][4] + "P.txt", z[i][4]])
+                        current_path.append([p + "\ "[0] + "Other" + z[i][0][4] + "P.txt", z[i][0][4], "ZTF"])
                     else:
-                        m.append([p+"\ "[0]+z[i],z[i][4]])
+                        current_path.append([p+"\ "[0]+z[i][0], z[i][0][4], "ZTF"])
 
-                if self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip:
-                    gr =makeGrapf(m, p, self.star_name_in.text(), True)
+                    if subtype == "E":
+                        l = LightCurve(self.per_line_in.text(), p + "\ "[0] + z[i][0], "Минимуме", "Other",
+                                       self.Epoch_line_in.text(), z[i][0][4], p)
+                        l.make_LightCurve_with_per(False)
+                        special_path.append([p + "\ "[0] + "Other" + z[i][0][4] + "P.txt", z[i][0][4], "ZTF"])
+
+                if self.per_line_in.text() != "" and subtype != "E":
+                    gr =makeGrapf(current_path, p, self.star_name_in.text(), True)
                     gr.make()
                 else:
-                    gr = makeGrapf(m, p, self.star_name_in.text())
+                    gr = makeGrapf(current_path, p, self.star_name_in.text())
                     gr.make()
 
-                if self.eclipse_line_in.text() == "" and (self.type_line_in.currentText() in mp or self.type_line_in.currentText() in mip):
-                    eclips_value = eclipse_percent(m[0][0])
+                if subtype == "E":
+                    gr = makeGrapf(special_path, p, self.star_name_in.text(), True)
+                    gr.make()
+
+                if self.eclipse_line_in.text() == "" and (self.type_line_in.currentText() in mip):
+                    eclips_value = eclipse_percent(current_path[0][0])
                     self.eclipse_line_in.setText(str(eclips_value))
 
             p1 = p+"\ "[0] + stn + ".txt"
@@ -1250,7 +1483,8 @@ class registrWin(QWidget):
                 else:
                     f.writelines("Type: " + self.type_line_in.currentText()+"\n")
                 f.writelines("Period: "+ self.per_line_in.text() + "\n")
-                f.writelines("Epoch: " + self.Epoch_line_in.text() + "\n")
+                if self.Epoch_line_in.text() != "":
+                    f.writelines("Epoch: " + str(float(self.Epoch_line_in.text()) + 2400000.5) + "\n")
                 f.writelines("Eclipse: " + self.eclipse_line_in.text() + "%\n" + "\n")
                 f.writelines("Remark:"+"\n"+"\n")
                 if self.ZTF_f:
@@ -1270,7 +1504,7 @@ class registrWin(QWidget):
         self.eclipse_line_in.clear()
         self.oth_name_in.clear()
         self.type_line_in_n.clear()
-        self.comm_line_in.setPlainText("GaiaEDR3 position.")
+        self.comm_line_in.setPlainText("Gaia DR3 position.")
         self.per_line_in.clear()
         self.Epoch_line_in.clear()
 
@@ -1329,6 +1563,7 @@ class Plate_Window(QWidget):
         self.dark_value = False
         self.show_errwin = ""
         self.settig = ""
+        self.information = ""
 
     def initUI(self):
         user = ctypes.windll.user32
@@ -1425,11 +1660,21 @@ class Plate_Window(QWidget):
         self.settings_btn.setGeometry(self.width()- 200, 250, 100, 50)
         self.settings_btn.clicked.connect(self.show_settings)
 
+        self.inf_btn = QPushButton(self)
+        self.inf_btn.setText("О программе")
+        self.inf_btn.setGeometry(self.width() - 200, 300, 100, 50)
+        self.inf_btn.clicked.connect(self.inform_show)
+
+    def inform_show(self):
+        self.information = about_program()
+
     def closeEvent(self, event):
         if self.settig != "":
             self.settig.close()
         if self.show_errwin != "":
             self.show_errwin.close()
+        if self.information != "":
+            self.information.close()
 
     def resizeEvent(self, event):
         self.settings_btn.move(self.width() - 200, 250)
@@ -1438,6 +1683,7 @@ class Plate_Window(QWidget):
         self.beak_btn.move(self.width()- 200, 150)
         self.dark_btn.move(self.width() - 200, 100)
         self.color_btn.move(self.width() // 2 - 50, 500)
+        self.inf_btn.move(self.width() - 200, 300)
 
     def show_settings(self):
         self.settig = setting()
@@ -1625,7 +1871,7 @@ class Plate_Window(QWidget):
             else:
                 dr.text((150, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
             dr.text((700, 775), "FOV: " + self.color_size_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
-            color.save(self.path_save+"/"+save_as.strip()+" " +self.color_size_value.currentText()+ ".png")
+            color.save(self.path_save+"/"+save_as.strip()+" chart.png")
             if self.prev_file:
                 self.prev_file = self.path_save+"/"+save_as.strip()+" " +self.color_size_value.currentText()+ ".png"
 
