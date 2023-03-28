@@ -1753,8 +1753,9 @@ class Plate_Window(QWidget):
     def preview(self):
         self.prev_file =True
         self.color()
-        self.pr = previewwin(self.prev_file)
-        self.pr.show()
+        if self.key_error == 0:
+            self.pr = previewwin(self.prev_file)
+            self.pr.show()
         self.prev_file = False
 
     def color(self):
@@ -1822,11 +1823,14 @@ class Plate_Window(QWidget):
                 pyp.close()
 
             if type_comb != "BRIR":
+                data_rot = [0, self.rot_image(data_png[0], data_png[1]), 0]
                 image_g = Image.open(data_png[0])
-                image_b = Image.open(data_png[1])
+                image_b = Image.open(data_png[1]).rotate(data_rot[1])
                 image_br = Image.blend(image_b, image_g, alpha=0.5)
                 image_br.save(self.path_save + "/BandR.png")
                 data_png.append(self.path_save + "/BandR.png")
+            else:
+                data_rot = [self.rot_image(data_png[2], data_png[0]), self.rot_image(data_png[2], data_png[1]), 0]
 
             delta_color = []
             for name in data_png:
@@ -1841,17 +1845,18 @@ class Plate_Window(QWidget):
             for i in range(len(data_png)):
                 image = Image.open(data_png[i])
                 image = image.crop((250, 390, 1490, 1630))
+                image = image.rotate(data_rot[i])
                 pixels = image.load()
                 color_p = color.load()
                 for y in range(image.size[0]):
                     for x in range(image.size[1]):
                         zn = color_p[y, x]
                         if i == 0:
-                            zn = (1, pixels[y, x][i]+ delta_color[i], 1)
+                            zn = (1, pixels[y, x][i] + delta_color[i], 1)
                         elif i == 1:
-                            zn = (1, zn[1], pixels[y, x][i]+ delta_color[i])
+                            zn = (1, zn[1], pixels[y, x][i] + delta_color[i])
                         else:
-                            zn = (pixels[y, x][i]+ delta_color[i], zn[1], zn[2])
+                            zn = (pixels[y, x][i] + delta_color[i], zn[1], zn[2])
                         color_p[y, x] = zn
             colorsize = self.color_size_value.currentText()
             if colorsize == "10'x10'":
@@ -1867,19 +1872,47 @@ class Plate_Window(QWidget):
             dr.text((400, 50), save_as, fill="#FFFFFF", font=font, anchor="ms")
             font = ImageFont.truetype("arial.ttf", 30)
             if type_comb == "BRIR":
-                dr.text((100, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
+                dr.text((100, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font,
+                        anchor="ms")
             else:
-                dr.text((150, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
+                dr.text((150, 775), "Chart: " + self.color_combinations_value.currentText(), fill="#FFFFFF", font=font,
+                        anchor="ms")
             dr.text((700, 775), "FOV: " + self.color_size_value.currentText(), fill="#FFFFFF", font=font, anchor="ms")
-            color.save(self.path_save+"/"+save_as.strip()+" chart.png")
+            color.save(self.path_save + "/" + save_as.strip() + " chart.png")
             if self.prev_file:
-                self.prev_file = self.path_save+"/"+save_as.strip()+" " +self.color_size_value.currentText()+ ".png"
+                self.prev_file = self.path_save + "/" + save_as.strip() + " chart.png"
+            self.start = False
 
     def clear(self):
         self.R_line.clear()
         self.G_line.clear()
         self.B_line.clear()
         self.name_in.setText("Color")
+
+    def rot_image(self, basic_img, rot_img):
+        image_main = Image.open(basic_img).crop((250, 390, 1490, 1630))
+        image_rot = Image.open(rot_img).crop((250, 390, 1490, 1630))
+        ma = 0
+        angle = 0
+        for i in range(-50, 50, 2):
+            if i < 0:
+                rt = (3600 + i) / 10
+            else:
+                rt = i / 10
+            rot = image_rot.rotate(rt).crop((200, 200, 600, 600)).load()
+            main = image_main.crop((200, 200, 600, 600)).load()
+            s = 0
+            for v in range(400):
+                for w in range(400):
+                    if rot[v, w][0] > 100 or main[v, w][0] > 100:
+                        if rot[v, w][0] > 100 and main[v, w][0] < 100 or rot[v, w][0] < 100 and main[v, w][0] > 100:
+                            s += 1
+                        else:
+                            s += 4
+            if s > ma:
+                ma = s
+                angle = rt
+        return angle
 
 class win2(QMainWindow):
     def __init__(self):
