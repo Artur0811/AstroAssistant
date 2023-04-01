@@ -679,20 +679,9 @@ class vari(QWidget):
     def initUI(self):
         user = ctypes.windll.user32
         self.setGeometry(user.GetSystemMetrics(0)//2-250, user.GetSystemMetrics(1)//2-200, 725, 400)
-        self.setStyleSheet('background: rgb(248, 248, 255);')
-        self.setMinimumSize(725, 400)
-
-        self.btn_Reg = QPushButton(self)
-        self.btn_Reg.setText("REGISTR")
-        self.btn_Reg.setGeometry(50, 50, 175, 300)
-
-        self.btn_OBR = QPushButton(self)
-        self.btn_OBR.setText("Fiel")
-        self.btn_OBR.setGeometry(275, 50, 175, 300)
-
-        self.plate_OBR = QPushButton(self)
-        self.plate_OBR.setText("Plates")
-        self.plate_OBR.setGeometry(500, 50, 175, 300)
+        self.setStyleSheet(standartstele)
+        self.ui = loadUi("UIvari.ui", self)
+        self.setWindowTitle("Выбор")
 
 class about_program(QMainWindow):
     def __init__(self):
@@ -2044,9 +2033,9 @@ class win2(QMainWindow):
     def w1(self):
         self.wi1 = vari()
         self.wi1.show()
-        self.wi1.btn_OBR.clicked.connect(self.w2)
-        self.wi1.btn_Reg.clicked.connect(self.w3)
-        self.wi1.plate_OBR.clicked.connect(self.w4)
+        self.wi1.ui.btn_OBR.clicked.connect(self.w2)
+        self.wi1.ui.btn_Reg.clicked.connect(self.w3)
+        self.wi1.ui.plate_OBR.clicked.connect(self.w4)
     def w2(self):
         self.wi1.close()
         self.wi2 = OBRwin()
