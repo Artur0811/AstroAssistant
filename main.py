@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import QLabel, QLineEdit, QCheckBox, QPlainTextEdit, QFileD
 from PyQt5.QtGui import QPixmap, QFont
 import seaborn as sns
 import matplotlib.pyplot as pyp
-import pandas as pn
+from PyQt5.uic import loadUi
+from pandas import DataFrame
 import os
 from os import makedirs
 import requests
@@ -14,30 +15,206 @@ import re
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageStat
 from astropy.io import fits
 
-
-setstell1= '''
-QPushButton {
-    color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
-}
+darkstele= '''
 QWidget {
-    background-color:rgb(28,28, 28);
-    }
+    background-color:rgb(28, 28, 28);
+}
+
+QPushButton {
+	border: 2px solid rgb(248, 248, 255);
+	background-color: rgb(11, 20, 197);
+	color: rgb(248, 248, 255);
+}
+
 QLabel {
-color: rgb(248, 248, 255)
+	color: rgb(248, 248, 255)
 }
+
 QLineEdit {
-color: rgb(248, 248, 255);background: rgb(28, 28, 28);
+	color: rgb(248, 248, 255);
+	background: rgb(28, 28, 28);
 }
+
+QLineEdit:hover {
+	background-color: rgb(64, 72, 221);
+}
+
+QGroupBox{
+	color: rgb(248, 248, 255);
+	background: rgb(28, 28, 28);
+}
+
 QComboBox {
-color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
+	color: rgb(248, 248, 255);
+	border: 2px solid rgb(248, 248, 255);
+	background: rgb(28, 28, 28);
 }
+
+QComboBox:hover {
+	background-color: rgb(11, 20, 197);
+}
+
 QComboBox QAbstractItemView {
-color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
+	color: rgb(248, 248, 255);
+	border: 2px solid rgb(248, 248, 255);
+	background: rgb(28, 28, 28);
+	selection-background-color: rgb(11, 20, 197);
+	selection-color: rgb(170, 85, 255)
 }
-QPlainTextEdit {
-color: rgb(248, 248, 255);border: 2px solid rgb(248, 248, 255);background: rgb(28, 28, 28);
+
+QComboBox::drop-down:hover {
+    background-color: rgb(131, 0, 81);
+}
+
+QPushButton:hover{
+	background-color: rgb(170, 85, 255);
+	color: rgb(0, 0,0);
+}
+
+QPushButton:pressed {
+	background-color: rgb(131, 0, 81);
+	color: rgb(248, 248, 255);
+}
+
+QSlider::groove:horizontal {
+	border: 0px;
+}
+ 
+QSlider::sub-page:horizontal {
+	background-color: rgb(170, 85, 255);
+	margin-top:8px;
+	margin-bottom:8px;
+	border-radius: 2px;
+}
+ 
+QSlider::add-page:horizontal {
+	background:  rgb(131, 0, 81);
+	border: 0px solid #777;
+	border-radius: 2px;
+	margin-top:8px;
+	margin-bottom:8px;
+}
+ 
+QSlider::handle:horizontal {
+	background: rgb(28, 28, 28);
+	border: 2px solid rgb(248, 248, 255);
+	width: 12px;
+	border-radius: 4px;
+	margin-top:2px;
+	margin-bottom:2px;
+}
+ 
+QSlider::handle:horizontal:hover {
+	background-color: rgb(11, 20, 197)
 }
 '''
+
+standartstele='''
+QWidget {
+	background-color: rgb(243, 245, 255);
+}
+
+QPushButton {
+	border: 2px solid rgb(0, 0, 0);
+	background-color: rgb(124, 159, 255);
+	color: rgb(0, 0, 0);
+}
+
+QLabel {
+	color: rgb(0, 0, 0)
+}
+
+QLineEdit {
+	background-color: rgb(243, 245, 255);
+	border: 2px solid rgb(0, 0, 0);
+}
+
+QLineEdit:hover {
+	background-color: rgb(217, 222, 255);
+}
+
+QGroupBox{
+	color: rgb(0, 0, 0);
+	background-color: rgb(243, 245, 255);
+}
+
+QComboBox {
+	border: 2px solid rgb(0, 0, 0);
+	background-color: rgb(243, 245, 255);
+}
+
+QComboBox:hover {
+	background-color: rgb(124, 159, 255);
+}
+
+QComboBox QAbstractItemView {
+	border: 2px solid rgb(0, 0, 0);
+	background-color: rgb(243, 245, 255);
+	selection-background-color: rgb(217, 222, 255);
+	selection-color: rgb(0, 0, 0)
+}
+
+QComboBox::drop-down:hover {
+    background-color: rgb(190, 137, 255);
+}
+
+QPushButton:hover{
+	background-color: rgb(190, 137, 255);
+	color: rgb(0, 0,0);
+}
+
+QPushButton:pressed {
+	background-color:rgb(189, 23, 87);
+}
+
+QSlider::groove:horizontal {
+	border: 0px;
+}
+ 
+QSlider::sub-page:horizontal {
+	background-color: rgb(11, 20, 197);
+	margin-top:8px;
+	margin-bottom:8px;
+	border-radius: 2px;
+}
+ 
+QSlider::add-page:horizontal {
+	background:  rgb(131, 0, 81);
+	border: 0px solid #777;
+	border-radius: 2px;
+	margin-top:8px;
+	margin-bottom:8px;
+}
+ 
+QSlider::handle:horizontal {
+	background: rgb(124, 159, 255);
+	border: 2px solid rgb(0, 0, 0);
+	width: 12px;
+	border-radius: 4px;
+	margin-top:2px;
+	margin-bottom:2px;
+}
+ 
+QSlider::handle:horizontal:hover {
+	background-color: rgb(190, 137, 255)
+}
+
+QPlainTextEdit{
+	background-color: rgb(243, 245, 255);
+	border: 2px solid rgb(0, 0, 0);
+}
+
+QPlainTextEdit:hover{
+	background-color: rgb(217, 222, 255);
+}
+'''
+
+def refiend_path(path):
+    try:
+        a = sys._MEIPASS
+    except Exception:
+        a = os.path.abspath(".")
+    return os.path.join(a, path)
 
 def eclipse_percent(path):
     data = []
@@ -267,7 +444,7 @@ class makeGrapf:#создает график из данных файла. фо�
                     ymin = mi
                 if ma > ymax:
                     ymax = ma
-        data = pn.DataFrame({"x":x, "y":y, "data":value})
+        data = DataFrame({"x":x, "y":y, "data":value})
         color = {"ZTF r":"#f80000", "ZTF g":"#000080", "Atlas c" : "#40734f",  "Atlas o":"#f5770a", "ZTF i":"#ff4d00"}
         g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
@@ -527,12 +704,12 @@ class about_program(QMainWindow):
         self.setFixedSize(700, 600)
         user = ctypes.windll.user32
         self.move(user.GetSystemMetrics(0) // 2 - 350, user.GetSystemMetrics(1) // 2 - 300)
-        self.setWindowTitle("about_program")
+        self.setWindowTitle("О программе")
         self.scroll = QScrollArea()
         self.widget = QWidget()
         self.vbox = QVBoxLayout()
 
-        with open("about.txt", encoding="utf-8") as f:
+        with open(refiend_path("about.txt"), encoding="utf-8") as f:
             for text in f:
                 object = QLabel(text.strip())
                 if "?" in text:
@@ -569,7 +746,7 @@ class setting(QWidget):
         user = ctypes.windll.user32
         self.move(user.GetSystemMetrics(0) // 2 - 350, user.GetSystemMetrics(1) // 2 - 300)
         self.setWindowTitle('Setting')
-        self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setStyleSheet(standartstele)
 
         self.Fiel_line = QLabel(self)
         self.Fiel_line.setText("Path to the created files:")
@@ -1040,7 +1217,7 @@ class OBRwin(QWidget):
         if self.butn3.text() == "Dark":
             self.dark_value = True
             self.butn3.setText("White")
-            self.setStyleSheet(setstell1)
+            self.setStyleSheet(darkstele)
             self.line_Per_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
             self.line_F_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
             self.line_Epoch_in.setStyleSheet('color: rgb(248, 248, 255);background: rgb(28, 28, 28);')
@@ -1279,7 +1456,7 @@ class registrWin(QWidget):
         if self.dark_btn.text() == "Dark":
             self.dark_value = True
             self.dark_btn.setText("White")
-            self.setStyleSheet(setstell1)
+            self.setStyleSheet(darkstele)
             if self.key_err == 1:
                 self.star_name_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
                 self.coor_line_in.setStyleSheet("color: rgb(248, 248, 255);background: rgb(28, 28, 28)")
@@ -1702,24 +1879,24 @@ class Plate_Window(QWidget):
     def dark(self):
         if self.dark_btn.text() == "Dark":
             self.dark_value = True
-            self.setStyleSheet(setstell1)
+            self.setStyleSheet(darkstele)
             self.dark_btn.setText("White")
             if self.key_error == 1:
                 self.R_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
-                self.G_line.setStyleSheet(setstell1)
-                self.B_line.setStyleSheet(setstell1)
+                self.G_line.setStyleSheet(darkstele)
+                self.B_line.setStyleSheet(darkstele)
             elif self.key_error == 2:
-                self.R_line.setStyleSheet(setstell1)
+                self.R_line.setStyleSheet(darkstele)
                 self.G_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
-                self.B_line.setStyleSheet(setstell1)
+                self.B_line.setStyleSheet(darkstele)
             elif self.key_error == 3:
-                self.R_line.setStyleSheet(setstell1)
-                self.G_line.setStyleSheet(setstell1)
+                self.R_line.setStyleSheet(darkstele)
+                self.G_line.setStyleSheet(darkstele)
                 self.B_line.setStyleSheet("background: rgb(28, 28, 28);border: 2px solid rgb(248, 0, 0)")
             elif self.key_error == 0:
-                self.R_line.setStyleSheet(setstell1)
-                self.G_line.setStyleSheet(setstell1)
-                self.B_line.setStyleSheet(setstell1)
+                self.R_line.setStyleSheet(darkstele)
+                self.G_line.setStyleSheet(darkstele)
+                self.B_line.setStyleSheet(darkstele)
         else:
             self.dark_value = False
             self.dark_btn.setText("Dark")
@@ -1771,7 +1948,7 @@ class Plate_Window(QWidget):
             self.show_errwin = errWind("Не выбран файл!")
             self.show_errwin.show()
             if self.dark_value:
-                self.R_line.setStyleSheet(setstell1)
+                self.R_line.setStyleSheet(darkstele)
             else:
                 self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
             self.key_error = 2
@@ -1779,8 +1956,8 @@ class Plate_Window(QWidget):
             self.show_errwin = errWind("Не выбран файл!")
             self.show_errwin.show()
             if self.dark_value:
-                self.R_line.setStyleSheet(setstell1)
-                self.G_line.setStyleSheet(setstell1)
+                self.R_line.setStyleSheet(darkstele)
+                self.G_line.setStyleSheet(darkstele)
             else:
                 self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
                 self.G_line.setStyleSheet('background: rgb(248, 248, 255);')
@@ -1790,9 +1967,9 @@ class Plate_Window(QWidget):
         else:
             self.key_error = 0
             if self.dark_value:
-                self.R_line.setStyleSheet(setstell1)
-                self.G_line.setStyleSheet(setstell1)
-                self.B_line.setStyleSheet(setstell1)
+                self.R_line.setStyleSheet(darkstele)
+                self.G_line.setStyleSheet(darkstele)
+                self.B_line.setStyleSheet(darkstele)
             else:
                 self.R_line.setStyleSheet('background: rgb(248, 248, 255);')
                 self.B_line.setStyleSheet('background: rgb(248, 248, 255);')
@@ -1863,7 +2040,6 @@ class Plate_Window(QWidget):
                 color = color.crop((200, 200, 1040, 1040))
             else:
                 color = color.crop((400, 400, 840, 840))
-            color = color.resize((800, 800))
             color = ImageOps.flip(color)
             dr = ImageDraw.Draw(color)
             dr.line(((370, 400), (390, 400)), fill=(255, 255, 255))
