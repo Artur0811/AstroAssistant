@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>widget</class>
+ <widget class="QWidget" name="widget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>700</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Обработка пластинок</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+	background-color: rgb(243, 245, 255);
+}
+
+QPushButton {
+	border: 2px solid rgb(0, 0, 0);
+	background-color: rgb(124, 159, 255);
+	color: rgb(0, 0, 0);
+}
+
+QLabel {
+	color: rgb(0, 0, 0)
+}
+
+QLineEdit {
+	background-color: rgb(243, 245, 255);
+	border: 2px solid rgb(0, 0, 0);
+}
+
+QLineEdit:hover {
+	background-color: rgb(217, 222, 255);
+}
+
+QGroupBox{
+	color: rgb(0, 0, 0);
+	background-color: rgb(243, 245, 255);
+}
+
+QComboBox {
+	border: 2px solid rgb(0, 0, 0);
+	background-color: rgb(243, 245, 255);
+}
+
+QComboBox:hover {
+	background-color: rgb(124, 159, 255);
+}
+
+QComboBox QAbstractItemView {
+	border: 2px solid rgb(0, 0, 0);
+	background-color: rgb(243, 245, 255);
+	selection-background-color: rgb(217, 222, 255);
+	selection-color: rgb(0, 0, 0)
+}
+
+QComboBox::drop-down:hover {
+    background-color: rgb(190, 137, 255);
+}
+
+QPushButton:hover{
+	background-color: rgb(190, 137, 255);
+	color: rgb(0, 0,0);
+}
+
+QPushButton:pressed {
+	background-color:rgb(189, 23, 87);
+}
+
+QSlider::groove:horizontal {
+	border: 0px;
+}
+ 
+QSlider::sub-page:horizontal {
+	background-color: rgb(11, 20, 197);
+	margin-top:8px;
+	margin-bottom:8px;
+	border-radius: 2px;
+}
+ 
+QSlider::add-page:horizontal {
+	background:  rgb(131, 0, 81);
+	border: 0px solid #777;
+	border-radius: 2px;
+	margin-top:8px;
+	margin-bottom:8px;
+}
+ 
+QSlider::handle:horizontal {
+	background: rgb(124, 159, 255);
+	border: 2px solid rgb(0, 0, 0);
+	width: 12px;
+	border-radius: 4px;
+	margin-top:2px;
+	margin-bottom:2px;
+}
+ 
+QSlider::handle:horizontal:hover {
+	background-color: rgb(190, 137, 255)
+}
+
+
+
+</string>
+  </property>
+  <widget class="QLabel" name="name">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>80</y>
+     <width>191</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <italic>false</italic>
+     <underline>false</underline>
+     <strikeout>false</strikeout>
+    </font>
+   </property>
+   <property name="text">
+    <string>Введите название звезды</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="name_in">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>80</y>
+     <width>231</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Color</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="platesBox">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>130</y>
+     <width>461</width>
+     <height>181</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="title">
+    <string>Выберите пластинки в формате .fits</string>
+   </property>
+   <widget class="QLineEdit" name="R_line">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>30</y>
+      <width>211</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+   </widget>
+   <widget class="QLabel" name="R">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>141</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Инфракрасная (IR)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="G">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>80</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Красная (R)</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="G_line">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>80</y>
+      <width>211</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+   </widget>
+   <widget class="QLabel" name="B">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>130</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Синия (B)</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="B_line">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>130</y>
+      <width>211</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="R_btn">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>30</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Select</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="G_btn">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>80</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Select</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="B_btn">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>130</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Select</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="color_size">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>390</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Угол обзора</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="color_combinations">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>330</y>
+     <width>181</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Из каких пластинок составить изображение</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="color_combinations_value">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>340</y>
+     <width>231</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <item>
+    <property name="text">
+     <string>BRIR</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>B+R</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QComboBox" name="color_size_value">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>390</y>
+     <width>231</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <item>
+    <property name="text">
+     <string>10'x10'</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>5'x5'</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QPushButton" name="clear_btn">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>20</y>
+     <width>141</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Очистеть</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="dark_btn">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>70</y>
+     <width>141</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Темная тема</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="beak_btn">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>120</y>
+     <width>141</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Назад</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="butn4">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>170</y>
+     <width>141</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Показать итог</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="settings_btn">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>220</y>
+     <width>141</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Настройки</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="inf_btn">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>270</y>
+     <width>141</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>О программе</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="color_btn">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>580</y>
+     <width>161</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Создать</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="title">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>20</y>
+     <width>431</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>15</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Этап 2: Cоздание цветных изображений</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
