@@ -847,18 +847,14 @@ class errWind(QWidget):
         self.setFixedSize(400, 200)
         user = ctypes.windll.user32
         self.move(user.GetSystemMetrics(0) // 2 - 200, user.GetSystemMetrics(1) // 2 - 100)
-        self.setStyleSheet('background: rgb(248, 248, 255);')
-        self.setWindowTitle('ERR')
+        self.setStyleSheet(standartstele)
+        self.ui = loadUi("UIerr.ui", self)
+        self.setWindowTitle("ERR")
 
-        self.err_show = QLabel(self)
-        self.err_show.setText(self.text_err)
-        self.err_show.setGeometry(0,0,400, 100)
-        self.err_show.setAlignment(Qt.AlignCenter)
+        self.ui.err_show.setText(self.text_err)
+        self.ui.err_show.setAlignment(Qt.AlignCenter)
 
-        self.btn = QPushButton(self)
-        self.btn.setText("OK")
-        self.btn.setGeometry(150, 120, 100, 30)
-        self.btn.clicked.connect(self.ok)
+        self.ui.btn.clicked.connect(self.ok)
 
     def ok(self):
         self.close()
@@ -871,7 +867,7 @@ class previewwin(QWidget):
 
     def initUI(self):
         self.setWindowTitle('Preview')
-        self.setStyleSheet('background: rgb(248, 248, 255);')
+        self.setStyleSheet(standartstele)
 
         self.lab = QLabel(self)
         self.lab.move(10, 10)
