@@ -745,112 +745,60 @@ class setting(QWidget):
         self.setFixedSize(700, 600)
         user = ctypes.windll.user32
         self.move(user.GetSystemMetrics(0) // 2 - 350, user.GetSystemMetrics(1) // 2 - 300)
-        self.setWindowTitle('Setting')
-        self.setStyleSheet(standartstele)
+        self.ui = loadUi("UIsettings.ui", self)
+        self.ui.setStyleSheet(standartstele)
+        self.setWindowTitle('Настройки')
 
-        self.Fiel_line = QLabel(self)
-        self.Fiel_line.setText("Path to the created files:")
-        self.Fiel_line.move(100, 50)
+        self.ui.Fiel_line_choice.clicked.connect(self.file_choice)
 
-        self.Fiel_line_in = QLineEdit(self)
-        self.Fiel_line_in.setGeometry(100, 75, 200, 25)
-        self.Fiel_line_in.setMaxLength(50)
+        self.ui.star_line_choice.clicked.connect(self.star_choice)
 
-        self.Fiel_line_choice = QPushButton(self)
-        self.Fiel_line_choice.setGeometry(300, 75, 50, 25)
-        self.Fiel_line_choice.setText("Select")
-        self.Fiel_line_choice.clicked.connect(self.file_choice)
-
-        self.star_line = QLabel(self)
-        self.star_line.setText("Path for registration cards:")
-        self.star_line.move(100, 150)
-
-        self.star_line_in = QLineEdit(self)
-        self.star_line_in.setGeometry(100, 175, 200, 25)
-        self.star_line_in.setMaxLength(50)
-
-        self.star_line_choice = QPushButton(self)
-        self.star_line_choice.setGeometry(300, 175, 50, 25)
-        self.star_line_choice.setText("Select")
-        self.star_line_choice.clicked.connect(self.star_choice)
-
-        self.min_period_text = QLabel(self)
-        self.min_period_text.setGeometry(100, 250, 75, 25)
-        self.min_period_text.setText("Min period:")
-
-        self.min_period_in = QLineEdit(self)
-        self.min_period_in.setGeometry(175, 250, 100, 25)
-        self.min_period_in.setText("1")
-
-        self.max_period_text = QLabel(self)
-        self.max_period_text.setGeometry(300, 250, 75, 25)
-        self.max_period_text.setText("Max period:")
-
-        self.max_period_in = QLineEdit(self)
-        self.max_period_in.setGeometry(375, 250, 100, 25)
-        self.max_period_in.setText("1000")
-
-        self.step_period_text = QLabel(self)
-        self.step_period_text.setGeometry(100, 350, 75, 25)
-        self.step_period_text.setText("Step period:")
-
-        self.step_period_in = QLineEdit(self)
-        self.step_period_in.setGeometry(175, 350, 100, 25)
-        self.step_period_in.setText("0.00001")
-
-        self.butn = QPushButton(self)
-        self.butn.setText("ok")
-        self.butn.setGeometry(300, 425, 100, 50)
-
-        self.inf_btn = QPushButton(self)
-        self.inf_btn.setText("О программе")
-        self.inf_btn.setGeometry(self.width() - 150, 50, 100, 50)
-        self.inf_btn.clicked.connect(self.inform_show)
+        self.ui.inf_btn.clicked.connect(self.inform_show)
 
     def inform_show(self):
         self.information = about_program()
 
     def chek_value(self):
-        if not(os.path.isdir(self.Fiel_line_in.text())):
-            self.Fiel_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        if not(os.path.isdir(self.ui.Fiel_line_in.text())):
+            self.ui.Fiel_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.ui.star_line_in.setStyleSheet(standartstele)
+            self.ui.min_period_in.setStyleSheet(standartstele)
+            self.ui.max_period_in.setStyleSheet(standartstele)
             self.err_win = errWind("Папка не найдена!")
             self.err_win.show()
-        elif not(os.path.isdir(self.star_line_in.text())):
-            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.star_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        elif not(os.path.isdir(self.ui.star_line_in.text())):
+            self.ui.Fiel_line_in.setStyleSheet(standartstele)
+            self.ui.star_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.ui.min_period_in.setStyleSheet(standartstele)
+            self.ui.max_period_in.setStyleSheet(standartstele)
             self.err_win = errWind("Папка не найдена!")
             self.err_win.show()
-        elif not(is_float(self.max_period_in.text())):
-            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.min_period_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+        elif not(is_float(self.ui.max_period_in.text())):
+            self.ui.Fiel_line_in.setStyleSheet(standartstele)
+            self.ui.star_line_in.setStyleSheet(standartstele)
+            self.ui.min_period_in.setStyleSheet(standartstele)
+            self.ui.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.err_win = errWind("Укажите число!")
             self.err_win.show()
-        elif not(is_float(self.min_period_in.text())):
-            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        elif not(is_float(self.ui.min_period_in.text())):
+            self.ui.Fiel_line_in.setStyleSheet(standartstele)
+            self.ui.star_line_in.setStyleSheet(standartstele)
+            self.ui.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.ui.max_period_in.setStyleSheet(standartstele)
             self.err_win = errWind("Укажите число!")
             self.err_win.show()
-        elif float(self.min_period_in.text()) > float(self.max_period_in.text()):
-            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            self.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+        elif float(self.ui.min_period_in.text()) > float(self.ui.max_period_in.text()):
+            self.ui.Fiel_line_in.setStyleSheet(standartstele)
+            self.ui.star_line_in.setStyleSheet(standartstele)
+            self.ui.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.ui.max_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.err_win = errWind("Минимальный период должен быть меньше максимального!")
             self.err_win.show()
-        elif float(self.min_period_in.text()) == 0:
-            self.Fiel_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.star_line_in.setStyleSheet('background: rgb(248, 248, 255);')
-            self.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-            self.max_period_in.setStyleSheet('background: rgb(248, 248, 255);')
+        elif float(self.ui.min_period_in.text()) == 0:
+            self.ui.Fiel_line_in.setStyleSheet(standartstele)
+            self.ui.star_line_in.setStyleSheet(standartstele)
+            self.ui.min_period_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.ui.max_period_in.setStyleSheet(standartstele)
             self.err_win = errWind("Минимальный период не может равняться 0!")
             self.err_win.show()
         else:
@@ -868,26 +816,26 @@ class setting(QWidget):
 
     def start(self):
         with open("setting.txt", "w") as f:
-            f.writelines(self.star_line_in.text()+"\n")
-            f.writelines(self.Fiel_line_in.text()+"\n")
-            f.writelines("Min_period " + self.min_period_in.text() + "\n")
-            f.writelines("Max_period " + self.max_period_in.text() + "\n")
-            f.writelines("Step_period " + self.step_period_in.text())
+            f.writelines(self.ui.star_line_in.text()+"\n")
+            f.writelines(self.ui.Fiel_line_in.text()+"\n")
+            f.writelines("Min_period " + self.ui.min_period_in.text() + "\n")
+            f.writelines("Max_period " + self.ui.max_period_in.text() + "\n")
+            f.writelines("Step_period " + self.ui.step_period_in.text())
 
     def file_choice(self):
-        self.Fiel_line_in.setText(QFileDialog().getExistingDirectory(self))
+        self.ui.Fiel_line_in.setText(QFileDialog().getExistingDirectory(self))
 
     def star_choice(self):
-        self.star_line_in.setText(QFileDialog().getExistingDirectory(self))
+        self.ui.star_line_in.setText(QFileDialog().getExistingDirectory(self))
 
     def fill_inf(self):
         with open("setting.txt") as f:
             file = f.read().split("\n")
-            self.star_line_in.setText(file[0])
-            self.Fiel_line_in.setText(file[1])
-            self.min_period_in.setText(file[2].split()[1])
-            self.max_period_in.setText(file[3].split()[1])
-            self.step_period_in.setText(file[4].split()[1])
+            self.ui.star_line_in.setText(file[0])
+            self.ui.Fiel_line_in.setText(file[1])
+            self.ui.min_period_in.setText(file[2].split()[1])
+            self.ui.max_period_in.setText(file[3].split()[1])
+            self.ui.step_period_in.setText(file[4].split()[1])
 
 class errWind(QWidget):
     def __init__(self, text_err):
@@ -1084,8 +1032,8 @@ class OBRwin(QWidget):
         self.settig = setting()
         self.settig.fill_inf()
         self.settig.show()
-        self.settig.butn.clicked.connect(self.settig.chek_value)
-        self.settig.butn.clicked.connect(self.success)
+        self.settig.ui.butn.clicked.connect(self.settig.chek_value)
+        self.settig.ui.butn.clicked.connect(self.success)
 
     def success(self):
         if self.settig.successfully:
@@ -1441,8 +1389,8 @@ class registrWin(QWidget):
         self.settig = setting()
         self.settig.fill_inf()
         self.settig.show()
-        self.settig.butn.clicked.connect(self.settig.chek_value)
-        self.settig.butn.clicked.connect(self.success)
+        self.settig.ui.butn.clicked.connect(self.settig.chek_value)
+        self.settig.ui.butn.clicked.connect(self.success)
 
     def success(self):
         if self.settig.successfully:
@@ -1866,8 +1814,8 @@ class Plate_Window(QWidget):
         self.settig = setting()
         self.settig.fill_inf()
         self.settig.show()
-        self.settig.butn.clicked.connect(self.settig.chek_value)
-        self.settig.butn.clicked.connect(self.success)
+        self.settig.ui.butn.clicked.connect(self.settig.chek_value)
+        self.settig.ui.butn.clicked.connect(self.success)
 
     def success(self):
         if self.settig.successfully:
