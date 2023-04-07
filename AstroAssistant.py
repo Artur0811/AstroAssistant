@@ -1683,7 +1683,7 @@ class Plate_Window(QWidget):
                 color = color.crop((200, 200, 1040, 1040))
             else:
                 color = color.crop((400, 400, 840, 840))
-            color = ImageOps.flip(color)
+            color = ImageOps.flip(color.resize((800, 800)))
             dr = ImageDraw.Draw(color)
             dr.line(((370, 400), (390, 400)), fill=(255, 255, 255))
             dr.line(((410, 400), (430, 400)), fill=(255, 255, 255))
