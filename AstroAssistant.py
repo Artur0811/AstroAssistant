@@ -1273,7 +1273,7 @@ class registrWin(QWidget):
                 self.coor_line_in.setStyleSheet(darkstele)
                 not_err_style = darkstele
             else:
-                self.coor_line_in.setStyleSheet("background: rgb(248, 248, 255)")
+                self.coor_line_in.setStyleSheet(standartstele)
                 not_err_style = standartstele
             self.key_err = fiend_err(wid, style, 4)
             normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], not_err_style)
