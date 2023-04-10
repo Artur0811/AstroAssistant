@@ -455,7 +455,8 @@ class makeGrapf:#создает график из данных файла. фо�
                 if ma > ymax:
                     ymax = ma
         data = DataFrame({"x":x, "y":y, "data":value})
-        color = {"ZTF r":"#f80000", "ZTF g":"#000080", "Atlas c" : "#40734f",  "Atlas o":"#f5770a", "ZTF i":"#ff4d00"}
+        color = {"ZTF r":"#f80000", "ZTF g":"#000080", "Atlas c" : "#40734f",  "Atlas o":"#f5770a", "ZTF i":"#ff4d00", "Other r": "#f80000", "Other g":"#000080",
+                 "Other c" : "#40734f",  "Other o":"#f5770a", "Other i":"#ff4d00"}
         g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
         g.figure.set_figheight(8)
