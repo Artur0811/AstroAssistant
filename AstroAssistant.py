@@ -963,6 +963,15 @@ class OBRwin(QWidget):
         self.line_F_in.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Text Files (*.txt *.tbl)")[0])
 
     def count(self):
+        if self.dark_value:
+            self.line_F_in.setStyleSheet(darkstele)
+            self.line_Per_in.setStyleSheet(darkstele)
+            self.line_Epoch_in.setStyleSheet(darkstele)
+        else:
+            self.line_F_in.setStyleSheet(standartstele)
+            self.line_Per_in.setStyleSheet(standartstele)
+            self.line_Epoch_in.setStyleSheet(standartstele)
+
         if self.line_F_in.text() == "" or self.line_F_in.text() == "Обязательное поле":
             self.line_F_in.setText("Обязательное поле")
             self.line_F_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
@@ -970,48 +979,27 @@ class OBRwin(QWidget):
             self.show_errwin = errWind("Не указан путь к файлу!")
             self.show_errwin.show()
         else:
-            if self.dark_value:
-                self.line_F_in.setStyleSheet(darkstele)
-            else:
-                self.line_F_in.setStyleSheet(standartstele)
-
             if self.line_Epoch_in.text() == "" and self.line_Per_in.text() != "" or self.line_Epoch_in.text() == "Обязательное поле" and self.line_Per_in.text() != "":
                 self.line_Epoch_in.setText("Обязательное поле")
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                if self.dark_value:
-                    self.line_Per_in.setStyleSheet(darkstele)
-                else:
-                    self.line_Per_in.setStyleSheet(standartstele)
                 self.err_key = 2
                 self.show_errwin = errWind("Вы указали период! Укажите эпоху!")
+                self.show_errwin.show()
+            elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
+                self.line_Per_in.setText("Обязательное поле")
+                self.err_key = 3
+                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+                self.show_errwin = errWind("Вы указали эпоху! Укажите период!")
                 self.show_errwin.show()
             elif not(is_float(self.line_Per_in.text())) and self.line_Per_in.text() != "":
                 self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                 self.err_key = 4
-                if self.dark_value:
-                    self.line_Epoch_in.setStyleSheet(darkstele)
-                else:
-                    self.line_Epoch_in.setStyleSheet(standartstele)
                 self.show_errwin = errWind("Период должен быть числом!")
                 self.show_errwin.show()
             elif not(is_float(self.line_Epoch_in.text())) and self.line_Epoch_in.text() != "":
                 self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                 self.err_key = 5
-                if self.dark_value:
-                    self.line_Per_in.setStyleSheet(darkstele)
-                else:
-                    self.line_Per_in.setStyleSheet(standartstele)
                 self.show_errwin = errWind("Эпоха должна быть числом!")
-                self.show_errwin.show()
-            elif self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "" or self.line_Epoch_in.text() != "" and self.line_Per_in.text() == "Обязательное поле":
-                self.line_Per_in.setText("Обязательное поле")
-                if self.dark_value:
-                    self.line_Epoch_in.setStyleSheet(darkstele)
-                else:
-                    self.line_Epoch_in.setStyleSheet(standartstele)
-                self.err_key = 3
-                self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.show_errwin = errWind("Вы указали эпоху! Укажите период!")
                 self.show_errwin.show()
             else:
                 self.err_key = 0
@@ -1019,29 +1007,15 @@ class OBRwin(QWidget):
                     if float(self.line_Per_in.text()) == 0:
                         self.line_Per_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                         self.err_key = 7
-                        if self.dark_value:
-                            self.line_Epoch_in.setStyleSheet(darkstele)
-                        else:
-                            self.line_Epoch_in.setStyleSheet(standartstele)
                         self.show_errwin = errWind("Период не может равняться 0!")
                         self.show_errwin.show()
                     elif float(self.line_Epoch_in.text()) == 0:
                         self.line_Epoch_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
                         self.err_key = 8
-                        if self.dark_value:
-                            self.line_Per_in.setStyleSheet(darkstele)
-                        else:
-                            self.line_Per_in.setStyleSheet(standartstele)
                         self.show_errwin = errWind("Эпоха не может равняться 0!")
                         self.show_errwin.show()
                     else:
                         self.err_key = 0
-                        if self.dark_value:
-                            self.line_Epoch_in.setStyleSheet(darkstele)
-                            self.line_Per_in.setStyleSheet(darkstele)
-                        else:
-                            self.line_Epoch_in.setStyleSheet(standartstele)
-                            self.line_Per_in.setStyleSheet(standartstele)
 
             if self.err_key == 0:
                 if self.line_Epoch_in.text() != "" and self.line_Per_in.text() != "":
@@ -1198,36 +1172,28 @@ class registrWin(QWidget):
             self.dark_value = True
             self.dark_btn.setText("Светлая тема")
             self.setStyleSheet(darkstele)
+            self.star_name_in.setStyleSheet(darkstele)
+            self.coor_line_in.setStyleSheet(darkstele)
+            normal_wid(wid, darkstele)
             if self.key_err == 1:
                 self.star_name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.coor_line_in.setStyleSheet(darkstele)
-                normal_wid(wid, darkstele)
             if self.key_err == 2 or self.key_err == 3:
-                self.star_name_in.setStyleSheet(darkstele)
                 self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                normal_wid(wid, darkstele)
             if self.key_err >= 4:
-                self.star_name_in.setStyleSheet(darkstele)
-                self.coor_line_in.setStyleSheet(darkstele)
                 wid[self.key_err-4].setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], darkstele)
         else:
             self.dark_value = False
             self.dark_btn.setText("Темная тема")
             self.setStyleSheet(standartstele)
+            self.coor_line_in.setStyleSheet(standartstele)
+            self.star_name_in.setStyleSheet(standartstele)
+            normal_wid(wid, standartstele)
             if self.key_err == 1:
                 self.star_name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.coor_line_in.setStyleSheet(standartstele)
-                normal_wid(wid, standartstele)
             if self.key_err == 2 or self.key_err == 3:
                 self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                self.star_name_in.setStyleSheet(standartstele)
-                normal_wid(wid, standartstele)
             if self.key_err >= 4:
-                self.coor_line_in.setStyleSheet(standartstele)
-                self.star_name_in.setStyleSheet(standartstele)
                 wid[self.key_err-4].setStyleSheet("border: 2px solid rgb(248, 0, 0)")
-                normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], standartstele)
 
     def create_file(self):
         wid = [self.max_mag_in, self.min_mag_in, self.per_line_in, self.Epoch_line_in, self.eclipse_line_in]
@@ -1262,7 +1228,6 @@ class registrWin(QWidget):
                 self.star_name_in.setStyleSheet(darkstele)
             else:
                 normal_wid(wid, standartstele)
-                self.star_name_in.setStyleSheet(standartstele)
             self.coor_line_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.show_errwin = errWind("Не правельный формат координат!\nФормат хх хх хх.ххх ±хх хх хх.ххх\nПример 23 56 32.019 +00 18 25.14")
             self.show_errwin.show()
@@ -1271,9 +1236,11 @@ class registrWin(QWidget):
             style = "border: 2px solid rgb(248, 0, 0)"
             if self.dark_value:
                 self.coor_line_in.setStyleSheet(darkstele)
+                self.star_name_in.setStyleSheet(darkstele)
                 not_err_style = darkstele
             else:
                 self.coor_line_in.setStyleSheet(standartstele)
+                self.star_name_in.setStyleSheet(standartstele)
                 not_err_style = standartstele
             self.key_err = fiend_err(wid, style, 4)
             normal_wid(wid[:self.key_err - 4] +wid[self.key_err- 3:], not_err_style)
@@ -1550,12 +1517,15 @@ class Plate_Window(QWidget):
             self.R_line.setStyleSheet(darkstele)
             self.G_line.setStyleSheet(darkstele)
             self.B_line.setStyleSheet(darkstele)
+            self.name_in.setStyleSheet(darkstele)
             if self.key_error == 1:
                 self.R_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             elif self.key_error == 2:
                 self.G_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             elif self.key_error == 3:
                 self.B_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            elif self.key_error == 4:
+                self.name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
         else:
             self.dark_value = False
             self.dark_btn.setText("Темная тема")
@@ -1563,12 +1533,15 @@ class Plate_Window(QWidget):
             self.R_line.setStyleSheet(standartstele)
             self.G_line.setStyleSheet(standartstele)
             self.B_line.setStyleSheet(standartstele)
+            self.name_in.setStyleSheet(standartstele)
             if self.key_error == 1:
                 self.R_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             elif self.key_error == 2:
                 self.G_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             elif self.key_error == 3:
                 self.B_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            elif self.key_error == 4:
+                self.name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
 
     def get_r(self):
         self.R_line.setText(QFileDialog().getOpenFileName(self, "Open project", "", "Image Files (*.fits)")[0])
@@ -1592,12 +1565,19 @@ class Plate_Window(QWidget):
             self.R_line.setStyleSheet(darkstele)
             self.G_line.setStyleSheet(darkstele)
             self.B_line.setStyleSheet(darkstele)
+            self.name_in.setStyleSheet(darkstele)
         else:
             self.R_line.setStyleSheet(standartstele)
             self.G_line.setStyleSheet(standartstele)
             self.B_line.setStyleSheet(standartstele)
+            self.name_in.setStyleSheet(standartstele)
 
-        if (self.R_line.text() == "" or self.R_line.text() == "Выберете файл") and self.color_combinations_value.currentText() == "BRIR":
+        if self.name_in.text() == "":
+            self.name_in.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
+            self.key_error = 4
+            self.show_errwin = errWind("Введите имя звезды!")
+            self.show_errwin.show()
+        elif (self.R_line.text() == "" or self.R_line.text() == "Выберете файл") and self.color_combinations_value.currentText() == "BRIR":
             self.R_line.setText("Выберете файл")
             self.R_line.setStyleSheet("border: 2px solid rgb(248, 0, 0)")
             self.key_error = 1
