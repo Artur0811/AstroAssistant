@@ -438,7 +438,7 @@ QPlainTextEdit:hover{
    </item>
    <item>
     <property name="text">
-     <string>Другой</string>
+     <string>Other</string>
     </property>
    </item>
   </widget>
