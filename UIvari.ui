@@ -131,7 +131,7 @@ QSlider::handle:horizontal:hover {
     </font>
    </property>
    <property name="text">
-    <string>Регисрация звезда</string>
+    <string>Регистрация звезда</string>
    </property>
   </widget>
   <widget class="QPushButton" name="btn_OBR">
@@ -167,7 +167,7 @@ QSlider::handle:horizontal:hover {
     </font>
    </property>
    <property name="text">
-    <string>Обработка пластинок</string>
+    <string>Обработка снимков</string>
    </property>
   </widget>
  </widget>
