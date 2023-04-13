@@ -549,7 +549,7 @@ QPlainTextEdit:hover{
     </font>
    </property>
    <property name="text">
-    <string>Выберете фильтр данных</string>
+    <string>Выберите фильтр данных</string>
    </property>
   </widget>
   <widget class="QComboBox" name="filter_box">
