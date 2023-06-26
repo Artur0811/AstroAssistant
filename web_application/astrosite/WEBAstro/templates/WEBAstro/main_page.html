@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link type = "text/css" href="{% static 'WEBAstro/css/styles.css' %}" rel = "stylesheet" />
+    <link rel = "shortcut icon" href="{% static 'WEBAstro/images/icon.ico' %}" type = "image/x-icon">
+</head>
+<body>
+{% block mainmenu %}
+    <div class="header">
+        <ul id = "mainmenu" class="mainmenu">
+        <li class="logo"> <a href="{% url 'home' %}"><div class = "logo"></div></a> </li>
+            {% for i in menu %}
+                <li><a href="{% url i.url %}"> {{i.title}}</a></li>
+            {% endfor %}
+            <li class="last"><a href="{% url 'login_page' %}"> Войти</a> |<a href="{% url 'register' %}"> Регистрация</a></li>
+        </ul>
+        <div class="clear"></div>
+    </div>
+{% endblock mainmenu %}
+
+{% block content %}
+<div class="req_text">
+    <ul class = req_text>
+        <li>Для запроса заполните следующие поля:</li>
+    </ul>
+</div>
+<div class="req">
+    <ul class = "data">
+        <li>Координаты:</li>
+        <input class="coor">
+        <li>Название звезды:</li>
+        <input class="name">
+        <li>Тип переменной:</li>
+        <select id="selectID">
+            {% for i in star_type %}
+                <option value={{i}}>{{i}}</option>
+            {% endfor %}
+        </select>
+        <button onclick="window.location.href = {% url 'star_info' %}">Обработать</button>
+    </ul>
+</div>
+{% endblock content %}
+{% block result %}
+{% endblock %}
+</body>
+</html>

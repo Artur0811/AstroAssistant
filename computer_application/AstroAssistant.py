@@ -223,7 +223,7 @@ def refiend_path(path):
     try:
         a = sys._MEIPASS
     except Exception:
-        a = os.path.abspath(".")
+        a = os.path.abspath("..")
     return os.path.join(a, path)
 
 def eclipse_percent(path):
