@@ -97,10 +97,10 @@ div.req{
 	overflow: hidden;
 }
 
-ul.data li {
+ul.data label {
 	float: left;
 	background: #f8f8ff;
-	margin: 17px 50px;
+	margin: 17px 25px;
 	padding: 7px 10px;
 	color: #0087DB;
 	border: 3px solid #005aeb;
@@ -128,13 +128,14 @@ ul.data input:hover {
 ul.data select {
 	float: left;
 	margin: 17px 20px;
-	padding: 10px 10px;
+	padding: 5px 10px;
 	color: #0087DB;
 	border: 3px solid #005aeb;
 	border-radius:15px;
 	box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
 	list-style: none;
 	background: #3F4137;
+	font-size: 24px
 }
 
 ul.data select:hover {
@@ -157,6 +158,52 @@ ul.data button {
 ul.data button:hover{
     background: #f3da0b;
 }
+
+ul.load {
+    padding: 10px 30px;
+}
+
+ul.load a{
+    padding: 50px 0px;
+    text-align: center;
+    display: block;
+    margin: 0 auto;
+}
+
+ul.load p.load_title {
+    font-size: 44px;
+    padding: 0px 30px;
+}
+
+ul.load li{
+    list-style-type: none;
+    padding: 0px 15px;
+    font-size: 24px;
+}
+
+div.load_info{
+    border: 3px solid #000;
+    border-radius:15px;
+    box-shadow:0 0 20px 5px rgba(135, 135, 135, 1);
+}
+
+.download_btn{
+    background: url('../images/load.png') no-repeat -5px -5px;
+    width: 300px;
+    height: 90px;
+    border-radius: 5px;
+    margin: auto;
+}
+
+.download_link{
+    padding: 0px;
+    width: 300px;
+}
+
+.download_btn:hover{
+    box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
+}
+
 
 ul.list-articles {
 	list-style: none;

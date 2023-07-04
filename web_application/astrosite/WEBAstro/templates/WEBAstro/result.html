@@ -1,1 +1,16 @@
 {% extends "WEBAstro/main_page.html"%}
+
+{% block result %}
+<p>
+    <div class="login_block">
+        <ul class = "login">
+            <li>Имя</li>
+            <li>{{ values.name }}</li>
+            <li>Координаты</li>
+            <li>{{ values.coordinates }}</li>
+            <li>Тип переменности</li>
+            <li>{{ values.star_type_value }}</li>
+        </ul>
+    </div>
+</p>
+{% endblock %}

@@ -29,17 +29,11 @@
 </div>
 <div class="req">
     <ul class = "data">
-        <li>Координаты:</li>
-        <input class="coor">
-        <li>Название звезды:</li>
-        <input class="name">
-        <li>Тип переменной:</li>
-        <select id="selectID">
-            {% for i in star_type %}
-                <option value={{i}}>{{i}}</option>
-            {% endfor %}
-        </select>
-        <button onclick="window.location.href = {% url 'star_info' %}">Обработать</button>
+        <form action="{% url 'home' %}" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Отправить</button>
+        </form>
     </ul>
 </div>
 {% endblock content %}

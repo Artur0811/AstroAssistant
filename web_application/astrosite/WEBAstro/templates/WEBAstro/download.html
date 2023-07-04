@@ -1,0 +1,15 @@
+{% extends "WEBAstro/main_page.html"%}
+
+{% block content %}
+<div class="load_block">
+        <ul class = "load">
+            <div class="load_info">
+                <p class="load_title">AstroAssistant</p>
+                <li class="about_programm">{{load_text|linebreaks}}</li>
+            </div>
+            <a href="http://127.0.0.1:8000/static/AstroAssistant/AstroAssistant.exe" download class="download_link">
+	            <button class="download_btn"></button>
+            </a>
+        </ul>
+</div>
+{% endblock %}

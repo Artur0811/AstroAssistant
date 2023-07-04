@@ -1,6 +1,7 @@
 from django.db import models
 
 # Create your models here.
+from django.urls import reverse
 
 class Star(models.Model):
     star_name = models.CharField(max_length=255)
@@ -9,6 +10,8 @@ class Star(models.Model):
     other_names = models.CharField(max_length=500)
     magnitude = models.CharField(max_length=30)
     eclipse = models.CharField(max_length=30)
+    period = models.CharField(max_length=30)
+    epoch = models.CharField(max_length=30)
     light_curve = models.ImageField(upload_to="curve/%Y/%m/%d/")
     area_photo = models.ImageField(upload_to="area/%Y/%m/%d/")
     time_create = models.DateTimeField(auto_now=True)
@@ -16,3 +19,6 @@ class Star(models.Model):
 
     def __str__(self):
         return self.star_name
+
+    def get_absolute_url(self):
+        return reverse("star", kwargs ={"star_id":self.pk})
