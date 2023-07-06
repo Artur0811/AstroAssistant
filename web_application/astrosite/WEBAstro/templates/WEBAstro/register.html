@@ -2,10 +2,16 @@
 
 {% block content %}
 <p>
-    <div class="login_block">
-        <ul class = "login">
-            <li>Тут будет регистрация</li>
-        </ul>
+    <div class="register_block">
+        <form method="post" class="reg_form">
+            {% csrf_token %}
+            {% for f in form %}
+            <label class="form_label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+            {{ f }}
+            <div class="form_err">{{ f.errors }}</div>
+            {% endfor %}
+            <button type="submit">Регистрация</button>
+        </form>
     </div>
 </p>
 {% endblock %}

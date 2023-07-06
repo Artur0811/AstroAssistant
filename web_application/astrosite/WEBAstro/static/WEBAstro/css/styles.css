@@ -59,6 +59,76 @@ div.article-panel p.last {
     float: right;
 }
 
+div.register_block, div.login_block{
+    margin: 30px auto;
+    width: 250px;
+    padding: 50px 70px 50px 50px;
+    border: 3px solid #005aeb;
+    border-radius: 50px;
+    box-shadow:0 0 15px 10px rgba(15, 163, 255, 0.8);
+}
+
+div.register_block input, div.login_block input{
+    width: 100%;
+    margin:15px 0px;
+    padding: 5px 10px;
+    color: #0fa3ff;
+    background: #3F4137;
+    border: 3px solid #005aeb;
+    border-radius:15px;
+    box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
+    font-size: 20px
+}
+
+div.register_block input:hover{
+    background :#212121
+}
+
+div.login_block input:hover{
+    background :#212121
+}
+
+div.register_block label, div.login_block label{
+    width: 100%;
+    font-size: 24px;
+}
+
+div.register_block button, div.login_block button{
+    margin: 40px auto 0 auto;
+    width: 273px;
+    height: 50px;
+    font-size: 28px;
+    text-aling: center;
+    color: #fff;
+    background: #00a1e0;
+    border: 2px solid #2b6cc4;
+    border-radius:30px;
+}
+
+div.register_block button:hover {
+    background: #0097d6;
+    color: #e6e6e6;
+    border: 2px solid #2162ba;
+}
+
+div.login_block button:hover {
+    background: #0097d6;
+    color: #e6e6e6;
+    border: 2px solid #2162ba;
+}
+
+div.form_err ul{
+    width: 330px;
+    margin: 20px auto 0 auto;
+    padding: 10px 20px;
+    font-size: 20px;
+    text-aling: center;
+    border: 2px solid #800000;
+    border-radius: 30px;
+    box-shadow:0 0 15px 4px rgba(204, 6, 5, 1);
+    overflow: hidden;
+}
+
 div.about{
     background: url('../images/nebula.png');
     height: 100%;

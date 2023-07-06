@@ -3,9 +3,16 @@
 {% block content %}
 <p>
     <div class="login_block">
-        <ul class = "login">
-            <li>Тут будет авторизация</li>
-        </ul>
+        <form method="post">
+            {% csrf_token %}
+            {% for f in form %}
+            <label class="form_label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+            {{ f }}
+            <div class="form_err">{{ f.errors }}</div>
+            {% endfor %}
+            <button type="submit" >Войти</button>
+        </form>
     </div>
+    <div class="form_err">{{ form.non_field_errors }}</div>
 </p>
 {% endblock %}

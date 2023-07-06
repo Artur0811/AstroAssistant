@@ -1,5 +1,7 @@
+from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render
+from django.contrib.auth.views import LoginView
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseNotFound
 
 
@@ -43,11 +45,11 @@ def About(request):
 def User(request):
     return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь"})
 
-def Login(request):
-    return render(request, "WEBAstro/login.html", {"menu": menu, "title":"Пользователь"})
+# def Login(request):
+#     return render(request, "WEBAstro/login.html", {"menu": menu, "title":"Пользователь"})
 
-def Register(request):
-    return render(request, "WEBAstro/register.html", {"menu": menu, "title":"Пользователь"})
+# def Register(request):
+#     return render(request, "WEBAstro/register.html", {"menu": menu, "title":"Пользователь"})
 
 def AstroAssistant(request):
     text = """Это приложение является расширенной версией нашего сайта. Оно помогает собирать все необходимые данные для регистрации переменных звезд в каталог VSX (Variable Star Index https://www.aavso.org/vsx/index.php ) и реализует следующие возможности:
@@ -65,9 +67,30 @@ def AstroAssistant(request):
 
 
 class RegisterUser(CreateView):
-    form_class = UserCreationForm
-    tempfile_name = "WEBAstro/register.html"
+    form_class = RegisterUserForm
+    template_name = "WEBAstro/register.html"
     success_url = reverse_lazy("login_page")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return dict(list(context.items()))
+
+class LoginUser(LoginView):
+    form_class = LoginUserForm
+    template_name = "WEBAstro/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return dict(list(context.items()))
+
+    def get_success_url(self):
+        return reverse_lazy("home")
+
+def Logout(request):
+    logout(request)
+    return redirect("login_page")
+
+def UserPage(request):
+    return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь"})
 
 
