@@ -13,12 +13,14 @@ class Star(models.Model):
     period = models.CharField(max_length=30)
     epoch = models.CharField(max_length=30)
     light_curve = models.ImageField(upload_to="curve/%Y/%m/%d/")
-    area_photo = models.ImageField(upload_to="area/%Y/%m/%d/")
     time_create = models.DateTimeField(auto_now=True)
-    registered = models.BooleanField(default=False)
+    user_id = models.CharField(max_length=15)
 
     def __str__(self):
         return self.star_name
 
     def get_absolute_url(self):
         return reverse("star", kwargs ={"star_id":self.pk})
+
+    def get_names(self):
+        return self.other_names.split(";")

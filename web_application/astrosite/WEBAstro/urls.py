@@ -10,5 +10,5 @@ urlpatterns = [
     path("logout/", Logout, name = "logout"),
     path("register/", RegisterUser.as_view(), name = "register"),
     path("AstroAssistant/", AstroAssistant ,name = "astroassistant"),
-    path("user/", UserPage, name = "user_page")
+    path("user/", User, name = "user_page")
 ]

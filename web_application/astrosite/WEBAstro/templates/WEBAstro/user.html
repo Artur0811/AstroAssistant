@@ -1,9 +1,49 @@
 {% extends "WEBAstro/main_page.html"%}
 
 {% block content %}
-<p>
-    <div class="register_block">
-        тут будет окно пользователя
-    </div>
-</p>
+<div >
+    <p>Последние запросы</p>
+</div>
+<div class="save_star">
+    <p>Сохраненные запросы</p>
+    <ul class="list-articles">
+        {% for s in stars %}
+            <li>
+                <div class="article-panel">
+                    <p class="first">Название: {{s.star_name}}</p>
+                    <p class="last">Дата запроса: {{s.time_create|date:"d-m-y H:i:s"}}</p>
+                </div>
+                <div class="star">
+                    <img class="curve" src="{{ s.light_curve.url }}">
+                    <div class="star_info">
+                        <div class="main_info">
+                            <p>Координаты: {{ s.coordinates }}</p>
+                            <p>Тип переменности: {{ s.star_type }}</p>
+                        </div>
+                        <div class="other_name">
+                            <p>Другие обозначения:</p>
+                            <div class="names">
+                                {% for n in s.get_names %}
+                                <p>{{n}}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="magn">
+                            <p>Магнитуда: {{s.magnitude}}</p>
+                        </div>
+                        {% if s.period %}
+                        <div class="per">
+                            <p>Период: {{s.period}} дней(я)</p>
+                            <p>Эпоха: {{s.epoch}}</p>
+                            {% if s.eclipse %}
+                            <p>Доля затмения: {{ s.eclipse }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        </div>
+                    </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
 {% endblock %}

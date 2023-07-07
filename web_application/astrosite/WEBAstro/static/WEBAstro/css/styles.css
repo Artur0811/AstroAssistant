@@ -17,7 +17,7 @@ a:hover {
 }
 
 
-img {max-width: 600px; height: auto;}
+img {max-width: 800px; height: auto;}
 
 img.img-article-left {
 	max-width: 300px;
@@ -118,7 +118,8 @@ div.login_block button:hover {
 }
 
 div.form_err ul{
-    width: 330px;
+    list-style: none;
+    width: 235px;
     margin: 20px auto 0 auto;
     padding: 10px 20px;
     font-size: 20px;
@@ -128,6 +129,8 @@ div.form_err ul{
     box-shadow:0 0 15px 4px rgba(204, 6, 5, 1);
     overflow: hidden;
 }
+
+
 
 div.about{
     background: url('../images/nebula.png');
@@ -281,7 +284,31 @@ ul.list-articles {
 	padding: 0;
 }
 ul.list-articles li {
+    margin: 50px 50px;
 	border-bottom: 1px solid #ccc;
+}
+
+div.star{
+    display: flex;
+    height: 100%
+}
+
+img.curve{
+    float: left;
+    width: 100%;
+}
+
+div.star_info div{
+    margin: 20px 0;
+}
+
+div.names{
+    width: 500px;
+    columns: 2;
+}
+
+div.names p{
+    margin: 0 0 10px;
 }
 
 .table-page {
@@ -598,11 +625,6 @@ ul.lang-list li a:hover {color: #fdc073;}
     vertical-align: top;
 }
 
-.form-error ul {
-    list-style: none;
-    padding: 0;
-    color: #CC0000;
-}
 
 .form-button {
     min-width: 200px;

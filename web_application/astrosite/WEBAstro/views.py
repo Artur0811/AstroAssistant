@@ -43,7 +43,8 @@ def About(request):
     return render(request, "WEBAstro/about.html", {"menu": menu, "title":"О программе", "about":"Тут будет текст о программе"})
 
 def User(request):
-    return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь"})
+    stars = Star.objects.filter(user_id = request.user.id)
+    return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь", "stars":stars})
 
 # def Login(request):
 #     return render(request, "WEBAstro/login.html", {"menu": menu, "title":"Пользователь"})
@@ -90,7 +91,5 @@ def Logout(request):
     logout(request)
     return redirect("login_page")
 
-def UserPage(request):
-    return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь"})
 
 
