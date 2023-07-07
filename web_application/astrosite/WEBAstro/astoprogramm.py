@@ -74,16 +74,19 @@ def Lafler_clinman(data, max = True):
     wmax = 1 / pmin
     p = []
     while wmin <= wmax:
-        if 1/wmin > 150:
-            step = 0.00001
-        elif 1/wmin > 100:
-            step = 0.00005
-        elif 1/wmin < 100:
-            step = 0.0001
-        elif 1/wmin < 10:
-            step = 0.0005
+        if 1/wmin > 400:
+            step = 0.000005
+        elif 1/wmin >100:
+            step= 0.00001
+        elif 1/wmin >10:
+            step = 0.000025
+        elif 1/wmin > 2:
+            step=0.00005
+        elif 1/wmin > 0.75:
+            step=0.00015
         else:
-            step = 0.001
+            step = 0.0003
+
         b = []
         for i in range(len(data)):
             b.append([drob((data[i][0] - ep0) * wmin), data[i][1]])
@@ -109,11 +112,11 @@ class OtherName:
             if "urat1&amp" in a[i]:
                 if 'NOWRAP' in a[i+3]:
                     if "URAT1" not in s:
-                        self.other.append(["URAT1", a[i+3][7:17]])
+                        self.other.append("URAT1 "+ a[i+3][7:17])
                         s["URAT1"] = ""
             if a[i].count("galex_ais")==1 and a[i+7] == "NOWRAP>GALEX" and "J" in a[i+8]:
                 if "GALEX" not in s:
-                    self.other.append(["GALEX", a[i+8][:-5]])
+                    self.other.append("GALEX "+ a[i+8][:-5])
                     s["GALEX"] = ""
             if "===" in a[i] and "AllWISE" not in a[i]:
                 b = a[i].split(";")
@@ -123,7 +126,7 @@ class OtherName:
                 if b[0] == "2MASS":
                     b[1] = "J"+b[1]
                 if b[0] not in s:
-                    self.other.append([b[0], b[1]])
+                    self.other.append(b[0]+" "+ b[1])
                     s[b[0]] = ""
         return self.other
 
@@ -194,10 +197,9 @@ class ZTF_Points:
         return ret
 
 class makeGrapf:#создает график из данных файла. формат данных в фале 2 сторки. ось x ось у
-    def __init__(self, path, savef, name, phase=False):#массив с путями к файлам\куда сохранять\название сохраняемого файла\фазовый или обычный график
-        self.path = path
+    def __init__(self,name, data, phase=False):#массив с путями к файлам\куда сохранять\название сохраняемого файла\фазовый или обычный график
         self.name = name
-        self.savef = savef
+        self.data = data
         self.phase = phase
     def make(self):
         ymin = 99
@@ -205,21 +207,19 @@ class makeGrapf:#создает график из данных файла. фо�
         x = []
         y = []
         value = []
-        for i in range(len(self.path)):
-            fil = self.path[i][2]+" "+self.path[i][1]
-            with open(self.path[i][0]) as f:
-                for i in f:
-                    x.append(float(i.split()[0]))
-                    y.append(float(i.split()[1]))
-                    value.append(fil)
-                mi, ma = min(y), max(y)
-                if mi < ymin:
-                    ymin = mi
-                if ma > ymax:
-                    ymax = ma
+        for y in range(len(self.data)):
+            for i in range(len(self.data[y][0])):
+                x.append(self.data[y][0][i][0])
+                y.append(self.data[y][0][i][1])
+                value.append(self.data[y][1])
+        mi, ma = min(y), max(y)
+        if mi < ymin:
+            ymin = mi
+        if ma > ymax:
+            ymax = ma
+
         data = DataFrame({"x":x, "y":y, "data":value})
-        color = {"ZTF r":"#f80000", "ZTF g":"#000080", "Atlas c" : "#40734f",  "Atlas o":"#f5770a", "ZTF i":"#ff4d00", "Other r": "#f80000", "Other g":"#000080",
-                 "Other c" : "#40734f",  "Other o":"#f5770a", "Other i":"#ff4d00"}
+        color = {"ZTF r":"#f80000", "ZTF g":"#000080"}
         g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
         g.figure.set_figheight(8)
@@ -229,212 +229,19 @@ class makeGrapf:#создает график из данных файла. фо�
             pyp.title(self.name, fontsize=23)
             pyp.ylabel("Magnitude", fontsize=18)
             pyp.xlabel("Phase", fontsize=18)
-            pyp.savefig(self.savef + "\ "[0] + self.name + "Phase.png")
         else:
             pyp.title(self.name, fontsize=23)
             pyp.ylabel("Magnitude", fontsize=18)
             pyp.xlabel("MJD", fontsize=18)
-            pyp.savefig(self.savef + "\ "[0] + self.name + "LC.png")
-        pyp.close()
+        return pyp
 
 
+def make_LightCurve_with_per(data, epoch, period):
+    res = []
+    for i in range(len(data)):
+        rez = (float(data[i][0]) - epoch) / float(period)
+        rez_c = math.floor(rez)
+        res.append([round((rez - rez_c), 6) , data[i][1]])
+        res.append([round((rez - rez_c)-1, 6) , data[i][1]])
 
-class LightCurve:
-    def __init__(self, per, path, on, by, epoch, filter, new_fiel, make = False):
-        #период\путь к файлу\где должен быть 0 фазы в макс или мин знач\от кого данные\эпоха\какой фильтр\куда сохранять новый файл\ делать график или нет
-        self.period = per
-        self.path = path
-        self.val_on = on
-        self.by = by
-        self.epoch = epoch
-        self.filter = filter
-        self.new_fiel = new_fiel
-        self.make = make
-    def make_epoch(self, ep):
-        m = float(self.epoch)
-        while True:
-            s = (m - ep) / float(self.period)
-            s_c = round(s) - 1
-            if -0.01<(s- s_c)%1 < 0.01:
-                return m
-            else:
-                m+=0.01
-
-    def make_LightCurve_not_per(self):
-        with open(self.path) as f:
-            a = f.read().split("\n")
-        if self.by ==  "ZTF":
-            b = self.new_fiel + "\ "[0] +self.by+self.filter+".txt"
-            with open(b, "w") as f:
-                for i in range(17, len(a)):
-                    if a[i]!= '':
-                        f.writelines(a[i].split()[3].replace("00000", "")+ " " + (a[i].split()[4])+ "\n")
-            if self.make:
-                g = makeGrapf([[b, self.filter, self.by]], self.new_fiel, "preview")
-                g.make()
-
-        if self.by == "Atlas":
-            o = self.new_fiel+'\ '[0]+self.by+'o.txt'
-            o1 = o
-            c = self.new_fiel+'\ '[0] +self.by+'c.txt'
-            c1 = c
-            with open(o1,'w') as f1:
-                with open(c1,'w') as f2:
-                    for i in range(1, len(a)):
-                        if a[i] != '':
-                            r = a[i].split()
-                            if '-' not in r[1] and len(r[3]) <6 and float(r[2])<1.5:
-                                if r[5] == 'c':
-                                    f2.writelines(r[0] +' '+ r[1]+'\n')
-                                if r[5] == "o":
-                                    f1.writelines(r[0] +' '+ r[1]+'\n')
-            if self.make:
-                g1 = makeGrapf([[o1, "o", "Atlas"],[c1, "c", "Atlas"]], self.new_fiel, "preview")
-                g1.make()
-
-        if self.by == "Other":
-            c = self.new_fiel + "\ "[0] + self.by + self.filter + ".txt"
-            b = c
-            with open(b, "w") as f:
-                for i in range(17, len(a)):
-                    if a[i] != '':
-                        f.writelines(a[i].split()[0] + " " + a[i].split()[1] + "\n")
-            if self.make:
-                g = makeGrapf([[b, self.filter, self.by]], self.new_fiel, "preview")
-                g.make()
-
-    def make_LightCurve_with_per(self, fep = True):
-        with open(self.path) as f:
-            a = f.read().split("\n")
-        c = self.new_fiel + "\ "[0] + self.by + self.filter + "P.txt"
-        b = c
-        if self.val_on == "Минимуме":
-            min_ = [0, 0]
-            if self.by == "ZTF":
-                a = a[17:]
-                for i in range(len(a)):
-                    if a[i] != '':
-                        a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
-                        if float(a[i][1]) > min_[1]:
-                            min_ = [float(a[i][0]), float(a[i][1])]
-                if fep:
-                    correct_epoch = self.make_epoch(min_[0])
-                else:
-                    correct_epoch = float(self.epoch)
-
-            if self.by == "Other":
-                min_ = [0, 0]
-                for i in range(len(a)):
-                    if a[i]!= "":
-                        k = a[i].split()
-                        a[i] = [float(k[0]), k[1]]
-                        if float(a[i][1]) > float(min_[1]):
-                            min_ = a[i]
-                if fep:
-                    correct_epoch = self.make_epoch(float(min_[0]))
-                else:
-                    correct_epoch = float(self.epoch)
-
-            if self.by == "Atlas":
-                for i in range(17, len(a)):
-                    r = a[i].split()
-                    if a[i] != '' and "-" not in r[1] and float(r[2]) < 1.5 and len(r[3]) < 6:
-                        a[i] = [r[0], r[1], r[5]]
-                        if float(a[i][1]) > min_[1]:
-                            min_ = [float(a[i][0]), float(a[i][1])]
-                if fep:
-                    correct_epoch = self.make_epoch(min_[0])
-                else:
-                    correct_epoch = float(self.epoch)
-                ft1= self.new_fiel + "\ "[0] + self.by + "oP.txt"
-                ft2 = self.new_fiel + "\ "[0] + self.by + "cP.txt"
-                f1 = ft1
-                f2 = ft2
-                with open(f1, "w") as of1:
-                    with open(f2, "w") as of2:
-                        for i in range(1, len(a)):
-                            if len(a[i]) == 3:
-                                rez = (float(a[i][0]) - correct_epoch) / float(self.period)
-                                rez_c = round(rez) - 1
-                                if a[i][2] == "c":
-                                    of2.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                                    of2.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
-                                else:
-                                    of1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                                    of1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
-
-                if self.make:
-                    g = makeGrapf([[f1, "o", "Atlas"], [f2, "c", "Atlas"]], self.new_fiel, "preview", phase= True)
-                    g.make()
-        else:
-            max_ = [30, 30]
-            if self.by == "ZTF":
-                a = a[17:]
-                for i in range(len(a)):
-                    if a[i] != '':
-                        a[i] = [a[i].split()[3], a[i].split()[4].replace("00000", "")]
-                        if float(a[i][1]) < max_[1]:
-                            max_ = [float(a[i][0]), float(a[i][1])]
-                if fep:
-                    correct_epoch = self.make_epoch(max_[0])
-                else:
-                    correct_epoch = float(self.epoch)
-
-            if self.by == "Other":
-                for i in range(len(a)):
-                    if a[i] != "":
-                        k = a[i].split()
-                        a[i] = [float(k[0]), k[1]]
-                        if float(a[i][1]) < float(max_[1]):
-                            max_ = a[i]
-                if fep:
-                    correct_epoch = self.make_epoch(float(max_[0]))
-                else:
-                    correct_epoch = float(self.epoch)
-
-            if self.by == "Atlas":
-                for i in range(17, len(a)):
-                    r = a[i].split()
-                    if a[i] != '' and "-" not in r[1] and float(r[2]) < 1.5 and len(r[3]) < 6:
-                        a[i] = [r[0], r[1], r[5]]
-                        if float(a[i][1]) < max_[1]:
-                            max_ = [float(a[i][0]), float(a[i][1])]
-
-                if fep:
-                    correct_epoch = self.make_epoch(max_[0])
-                else:
-                    correct_epoch = float(self.epoch)
-                ft1= self.new_fiel + "\ "[0] + self.by + "oP.txt"
-                ft2 = self.new_fiel + "\ "[0] + self.by + "cP.txt"
-                f1 = ft1
-                f2 = ft2
-                with open(f1, "w") as of1:
-                    with open(f2, "w") as of2:
-                        for i in range(1, len(a)):
-                            if len(a[i]) == 3:
-                                rez = (float(a[i][0]) - correct_epoch) / float(self.period)
-                                rez_c = round(rez) - 1
-                                if a[i][2] == "c":
-                                    of2.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                                    of2.writelines(str(rez - rez_c-1)[:8] + " " + a[i][1] + '\n')
-                                else:
-                                    of1.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                                    of1.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
-
-                if self.make:
-                    g = makeGrapf([[f1, "o", "Atlas"], [f2, "c", "Atlas"]], self.new_fiel, "preview", phase= True)
-                    g.make()
-
-        if self.by != "Atlas":
-            with open(b, "w") as f:
-                for i in range(len(a)):
-                    if a[i] != "":
-                        rez = (float(a[i][0]) - correct_epoch) / float(self.period)
-                        rez_c = math.floor(rez)
-                        f.writelines(str(rez - rez_c)[:8] + " " + a[i][1] + '\n')
-                        f.writelines(str(rez - rez_c - 1)[:8] + " " + a[i][1] + '\n')
-
-            if self.make:
-                g = makeGrapf([[b, self.filter, self.by]], self.new_fiel, "preview", phase=True)
-                g.make()
-        return correct_epoch
+    return res
