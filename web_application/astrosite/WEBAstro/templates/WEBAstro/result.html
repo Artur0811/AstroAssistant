@@ -2,15 +2,43 @@
 
 {% block result %}
 <p>
-    <div class="login_block">
-        <ul class = "login">
-            <li>Имя</li>
-            <li>{{ values.name }}</li>
-            <li>Координаты</li>
-            <li>{{ values.coordinates }}</li>
-            <li>Тип переменности</li>
-            <li>{{ values.star_type_value }}</li>
-        </ul>
+    <div class="result_block">
+        <div class="img">
+            <img src="{{curve}}">
+        </div>
+        <div class="info">
+            <div class = "result">
+                <li>Имя:</li>
+                <li>{{ values.name }}</li>
+                <li>Координаты:</li>
+                <li>{{ values.coordinates }}</li>
+                <li>Тип переменности:</li>
+                <li>{{ values.star_type_value }}</li>
+            </div>
+            <div class="magn">
+                <li>Магнитуда:</li>
+                <li>Минимальная яркость {{magn.min}} зв</li>
+                <li>Максимальная яркость {{magn.max}} зв</li>
+            </div>
+            {% if period %}
+            <div class="periodic">
+                <li>Период:</li>
+                <li>{{period}}</li>
+                <li>Эпоха:</li>
+                <li>{{epoch}}</li>
+                {% if eclipse %}
+                <li>Доля затмения</li>
+                <li>{{eclipse}}</li>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="save">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" name="save" value="{{epoch}}">Сохранить</button>
+                </form>
+            </div>
+        </div>
     </div>
 </p>
 {% endblock %}

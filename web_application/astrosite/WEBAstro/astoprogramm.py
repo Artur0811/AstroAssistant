@@ -175,6 +175,8 @@ class ZTF_Points:
                 magn.append(g_mag)
                 if kol != 0:
                     ret["ZTF g"] = res_g
+        else:
+            ret["ZTF g"] = []
 
         if name_r != []:
             r_mag = [100, -100, "r"]
@@ -193,32 +195,35 @@ class ZTF_Points:
                 magn.append(r_mag)
                 if kol != 0:
                     ret["ZTF r"] = res_r
-        ret["magn"] = max(magn, key=lambda x: abs(x[0]- x[1]))
+        else:
+            ret["ZTF r"] = []
+        magn=max(magn, key=lambda x: abs(x[0]- x[1]))
+        ret["magn"] = {"min":str(magn[1])+" "+ magn[2], "max":str(magn[0]) + " " + magn[2]}
         return ret
 
 class makeGrapf:#создает график из данных файла. формат данных в фале 2 сторки. ось x ось у
-    def __init__(self,name, data, phase=False):#массив с путями к файлам\куда сохранять\название сохраняемого файла\фазовый или обычный график
+    def __init__(self, data,name, phase=False):#массив с путями к файлам\куда сохранять\название сохраняемого файла\фазовый или обычный график
         self.name = name
         self.data = data
         self.phase = phase
     def make(self):
         ymin = 99
         ymax = 0
-        x = []
-        y = []
+        x_data = []
+        y_data = []
         value = []
         for y in range(len(self.data)):
             for i in range(len(self.data[y][0])):
-                x.append(self.data[y][0][i][0])
-                y.append(self.data[y][0][i][1])
+                x_data.append(self.data[y][0][i][0])
+                y_data.append(self.data[y][0][i][1])
                 value.append(self.data[y][1])
-        mi, ma = min(y), max(y)
+        mi, ma = min(y_data), max(y_data)
         if mi < ymin:
             ymin = mi
         if ma > ymax:
             ymax = ma
 
-        data = DataFrame({"x":x, "y":y, "data":value})
+        data = DataFrame({"x":x_data, "y":y_data, "data":value})
         color = {"ZTF r":"#f80000", "ZTF g":"#000080"}
         g = sns.scatterplot(data =data, x="x", y="y", hue= "data", palette=color)
         g.figure.set_figwidth(12)
@@ -236,12 +241,27 @@ class makeGrapf:#создает график из данных файла. фо�
         return pyp
 
 
-def make_LightCurve_with_per(data, epoch, period):
+def make_LightCurve_with_per(data,period, epoch):
     res = []
     for i in range(len(data)):
-        rez = (float(data[i][0]) - epoch) / float(period)
+        rez = (data[i][0] - epoch) / float(period)
         rez_c = math.floor(rez)
         res.append([round((rez - rez_c), 6) , data[i][1]])
         res.append([round((rez - rez_c)-1, 6) , data[i][1]])
-
     return res
+
+def is_periodic(type_star):
+    mp = {'ACV', 'BY', 'CTTS/ROT', 'ELL', 'FKCOM', 'HB', 'LERI', 'PSR', 'R', 'ROT', 'RS', 'SXARI', 'SXARI/E', 'TTS/ROT',
+          'WTTS/ROT', 'ACEP',
+          'ACYG', 'AHB1', 'BCEP', 'BCEPS', 'BLAP', 'BXCIR', 'CEP', 'CW', 'CWA', 'CWB', 'DCEP', 'DCEP(B)', 'DCEPS',
+          'DCEPS(B)',
+          'DSCT', 'GDOR', 'HADS', 'HADS(B)', 'L', 'M', 'PPN', 'roAm', 'roAp',
+          'RR', 'RRAB', 'RRC', 'RRD', 'RV', 'RVA', 'RVB', 'SPB', 'SR', 'SRA', 'SRB', 'SRC', 'SRD', 'SRS', 'SXPHE',
+          'SXPHE(B)', 'V361HYA',
+          'V1093HER', 'ZZ', 'ZZ/GWLIB', 'DPV', 'DYPer', 'RCB', 'UVN', 'ZZA/O'}
+    mip = {'E', 'EA', 'EB', 'EP', 'EW'}
+    if type_star in mp:
+        return (True, True)
+    elif type_star in mip:
+        return (True, False)
+    return (False, False)
