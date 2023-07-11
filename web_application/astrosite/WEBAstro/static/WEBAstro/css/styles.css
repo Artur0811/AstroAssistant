@@ -150,6 +150,36 @@ ul.about li{
     font-size: 28px
 }
 
+div.result_block{
+    display: flex;
+    list-style: none;
+    font-size: 20px;
+}
+
+button.save_btn{
+    background: #f8f32b;
+	margin: 16px 25px;
+	padding: 9px 10px;
+	color: #0087DB;
+	border: 3px solid #005aeb;
+	border-radius:15px;
+	box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
+	list-style: none;
+	font-size: 20px
+}
+
+div.info{
+    margin: 20px 0 0 0;
+}
+
+div.info div{
+    margin: 20px;
+    padding: 10px;
+    border: 3px solid #005aeb;
+	border-radius:15px;
+	box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
+}
+
 ul.req_text {
     height: auto
 }

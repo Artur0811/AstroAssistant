@@ -35,11 +35,15 @@
     <ul class = "data">
         <form action="{% url 'home' %}" method="post">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Отправить</button>
+            {% for f in form %}
+            <label class="form_label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+            {{ f }}
+            {% endfor %}
+            <button type="submit" value="form1" name="req">Отправить</button>
         </form>
     </ul>
 </div>
+{{ form.errors }}
 {% endblock content %}
 {% block result %}
 {% endblock %}

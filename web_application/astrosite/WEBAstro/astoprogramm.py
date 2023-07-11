@@ -2,6 +2,7 @@ import math
 import re
 import seaborn as sns
 import requests
+from django.core.exceptions import ValidationError
 from pandas import DataFrame
 import matplotlib.pyplot as pyp
 
@@ -44,7 +45,18 @@ def eclipse_percent(path):
 
 def is_coord(value):
     match = re.fullmatch(r"\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}\s[+-]\d{1,2}\s\d{1,2}\s\d{1,2}\.\d{1,3}", value)
-    return True if match else False
+    if match:
+        return None
+    else:
+        raise ValidationError(
+            "{} не является координатами. Поле может содержать знаки ± и цифры. Формат хх хх хх.ххх ±хх хх хх.ххх".format(value)
+        )
+
+def is_name(value):
+    a = '<>:"|\/?*;'
+    for i in range(len(a)):
+        if a[i] in value:
+            raise ValidationError('Символы <>:"|\/?*; не должны содератся в имени.')
 
 def LK1(a):
     s = 0

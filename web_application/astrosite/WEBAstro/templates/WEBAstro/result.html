@@ -20,6 +20,11 @@
                 <li>Минимальная яркость {{magn.min}} зв</li>
                 <li>Максимальная яркость {{magn.max}} зв</li>
             </div>
+            <div class="names">
+                {% for n in names %}
+                <li>{{n}}</li>
+                {% endfor %}
+            </div>
             {% if period %}
             <div class="periodic">
                 <li>Период:</li>
@@ -32,13 +37,15 @@
                 {% endif %}
             </div>
             {% endif %}
-            <div class="save">
-                <form method="post">
-                    {% csrf_token %}
-                    <button type="submit" name="save" value="{{epoch}}">Сохранить</button>
-                </form>
-            </div>
         </div>
+        {% if user.is_authenticated %}
+        <div class="save">
+            <form method="post">
+                {% csrf_token %}
+                <button class="save_btn" type="submit" name="save" value="{{ values.name }};{{ values.coordinates }};{{ values.star_type_value }};{{magn.min}};{{magn.max}};{{names}};{{period}};{{epoch}};{{eclipse}};{{curve}}">Сохранить</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 </p>
 {% endblock %}
