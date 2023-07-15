@@ -42,12 +42,15 @@ def main_page(request):
                 r_data = ztf['ZTF r']
                 g_data = ztf['ZTF g']
                 magn = ztf['magn']
+                eclipse = None
                 if r_data != [] or g_data != []:
                     per, epoch = None, None
                     if periodic:
                         per, epoch = Lafler_clinman(max(r_data, g_data, key=lambda x: len(x)), maximum)
                         r_data = make_LightCurve_with_per(r_data, per, epoch)
                         g_data = make_LightCurve_with_per(g_data, per, epoch)
+                        if not maximum:
+                            eclipse = eclipse_percent(max(r_data, g_data, key=lambda x: len(x)))
                     data_light = []
                     if r_data != []:
                         data_light.append([r_data, "ZTF r"])
@@ -281,25 +284,45 @@ def main_page(request):
                 # grf = makeGrapf(data_light, name="sdfs").make()
                 num_files = len([f for f in os.listdir(save_dir)
                                  if os.path.isfile(os.path.join(save_dir, f))])
-                print(num_files)
                 curve_name=values["coordinates"][0:5].replace(" ","")+str(tame.year)+values["name"][1:5].replace(" ","")+str(tame.month)+values["coordinates"][7:13].replace(" ","")+str(num_files)+".png"
-                print(curve_name)
+                curve_name = curve_name.replace("+","")
                 grf.savefig(os.path.join(save_dir, curve_name))
                 grf.close()
-                eclipse = None
+                curve_path = "media/curve/{}/{}/{}/{}".format(tame.year, tame.month, tame.day, curve_name)
 
                 data = {
                     "form": form,
                     "menu": menu,
                     "title":"Главная страница",
                     "values":values,
-                    "curve":"media/curve/{}/{}/{}/{}".format(tame.year, tame.month, tame.day, curve_name),
+                    "curve":curve_path,
                     "names":o_names,
                     "period":per,
                     "epoch":epoch,
                     "magn":magn,
                     "eclipse":eclipse,
+                    "show_btn": True,
                 }
+
+                if request.user.is_authenticated:
+                    last_star = Last_Stars()
+                    last_star.user_id = request.user.id
+                    last_star.star_name = values["name"]
+                    last_star.coordinates = values["coordinates"]
+                    last_star.star_type = values['star_type_value']
+                    last_star.light_curve = curve_path[6:]
+                    last_star.other_names = ";".join(o_names)
+                    last_star.magnitude = magn["min"] + " " + magn["max"]
+                    if per:
+                        last_star.period = per
+                        last_star.epoch = epoch
+                        if eclipse:
+                            last_star.eclipse = eclipse
+                    last_star.save()
+                else:
+                    rem = Remove_curve()
+                    rem.light_curve = curve_path
+
                 return render(request, "WEBAstro/result.html", data)
             else:
                 print("errrrrr")
@@ -315,6 +338,7 @@ def main_page(request):
                 "values": values,
                 "curve": star_info[-1],
                 "names": o_names,
+                "show_btn": False,
             }
             data["magn"] = {"min":star_info[3], "max":star_info[4]}
             if star_info[6] == "None":
@@ -353,8 +377,22 @@ def About(request):
     return render(request, "WEBAstro/about.html", {"menu": menu, "title":"О программе", "about":"Тут будет текст о программе"})
 
 def User(request):
+    if request.method == "POST":
+        del_star = Star.objects.filter(pk=request.POST.get("del_btn"))[0]
+        rem = Remove_curve()
+        rem.light_curve = del_star.light_curve
+        rem.save()
+        del_star.delete()
     stars = Star.objects.filter(user_id = request.user.id)
-    return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь", "stars":stars})
+    last = Last_Stars.objects.filter(user_id = request.user.id)[::-1]
+    while len(last)>3:
+        rem = Remove_curve()
+        rem.light_curve = last[-1].light_curve
+        rem.save()
+        last_star = last[-1]
+        last_star.delete()
+        last = last[:-1]
+    return render(request, "WEBAstro/user.html", {"menu": menu, "title":"Пользователь", "stars":stars, "last":last})
 
 
 # def Login(request):

@@ -28,7 +28,7 @@
 {% block content %}
 <div class="req_text">
     <ul class = req_text>
-        <li>Для запроса заполните следующие поля:</li>
+        <li>Для получения информации о звезде заполните следующие поля:</li>
     </ul>
 </div>
 <div class="req">
@@ -39,13 +39,31 @@
             <label class="form_label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
             {{ f }}
             {% endfor %}
-            <button type="submit" value="form1" name="req">Отправить</button>
+            <button type="submit" value="form1" name="req" id="submit" onclick="viewDiv()">Отправить</button>
         </form>
     </ul>
 </div>
-{{ form.errors }}
+<div class="errors">
+    {% for f in form %}
+        {{f.errors}}
+    {% endfor %}
+</div>
 {% endblock content %}
 {% block result %}
+
+<script>
+    function viewDiv(){
+        if ((document.getElementById('id_name').value != "") && (document.getElementById('id_coordinates').value != "")){
+            document.getElementById("loader").style.display = "block";
+            document.getElementById("result_block").style.display = "none";
+        }
+    };
+</script>
+
+<div class="loader" id="loader">
+    <img src="{% static 'WEBAstro/images/zerotwo.gif' %}" class="loader_gif">
+</div>
+
 {% endblock %}
 </body>
 </html>

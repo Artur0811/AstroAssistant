@@ -1,8 +1,8 @@
 {% extends "WEBAstro/main_page.html"%}
 
 {% block result %}
-<p>
-    <div class="result_block">
+<p id="result">
+    <div class="result_block" id="result_block">
         <div class="img">
             <img src="{{curve}}">
         </div>
@@ -32,13 +32,13 @@
                 <li>Эпоха:</li>
                 <li>{{epoch}}</li>
                 {% if eclipse %}
-                <li>Доля затмения</li>
+                <li>Доля затмения:</li>
                 <li>{{eclipse}}</li>
                 {% endif %}
             </div>
             {% endif %}
         </div>
-        {% if user.is_authenticated %}
+        {% if user.is_authenticated and show_btn %}
         <div class="save">
             <form method="post">
                 {% csrf_token %}
@@ -48,4 +48,17 @@
         {% endif %}
     </div>
 </p>
+
+<script>
+    function viewDiv(){
+        document.getElementById("result_block").style.display = "none";
+        if ((document.getElementById('id_name').value != "") && (document.getElementById('id_coordinates').value != "")){
+            document.getElementById("loader").style.display = "block";
+        }
+    };
+</script>
+
+<div class="loader" id="loader">
+    <img src="static/WEBAstro/images/zerotwo.gif" class="loader_gif">
+</div>
 {% endblock %}

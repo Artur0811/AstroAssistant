@@ -8,17 +8,15 @@ import matplotlib.pyplot as pyp
 
 
 
-def eclipse_percent(path):
+def eclipse_percent(values):
     data = []
     s = {}
-    with open(path) as f:
-        for i in f:
-            a = list(map(float, i.split()))
-            data.append(a)
-            if round(a[1], 2) in s:
-                s[round(a[1], 2)] +=1
-            else:
-                s[round(a[1], 2)] = 1
+    for a in values:
+        data.append(a)
+        if round(a[1], 2) in s:
+            s[round(a[1], 2)] +=1
+        else:
+            s[round(a[1], 2)] = 1
     ma = [0, 0]
     for i in s:
         if s[i]>ma[0]:
@@ -49,7 +47,7 @@ def is_coord(value):
         return None
     else:
         raise ValidationError(
-            "{} не является координатами. Поле может содержать знаки ± и цифры. Формат хх хх хх.ххх ±хх хх хх.ххх".format(value)
+            "{} не является координатами. Поле может содержать знаки ± и цифры. В формате хх хх хх.ххх ±хх хх хх.ххх".format(value)
         )
 
 def is_name(value):
@@ -67,21 +65,21 @@ def LK1(a):
 def drob(n):
     return n - math.floor(n)
 
-def Lafler_clinman(data, max = True):
-    if max:
+def Lafler_clinman(data, maxi = True):
+    if maxi:
         ma = 32
     else:
         ma = -32
     ep0 = 0
     for i in range(len(data)):
-            if data[i][1] < ma and max:
+            if data[i][1] < ma and maxi:
                 ma = data[i][1]
                 ep0 = data[i][0]
-            elif data[i][1] > ma and not(max):
+            elif data[i][1] > ma and not(maxi):
                 ma = data[i][1]
                 ep0 = data[i][0]
     pmin = 0.5
-    pmax = 1000
+    pmax = min(1000, data[-1][0]-data[0][0]-1)
     wmin = 1 / pmax
     wmax = 1 / pmin
     p = []

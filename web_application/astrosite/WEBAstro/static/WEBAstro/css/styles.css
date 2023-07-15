@@ -150,6 +150,89 @@ ul.about li{
     font-size: 28px
 }
 
+div.loader {
+    width: 356px;
+    height: 356px;
+    margin: 100px auto 100px auto;
+    padding: 50px;
+    border: 30px solid #0087DB;
+    border-style:dashed;
+    border-radius: 100%;
+    background: #000;
+    box-shadow:0 0 50px 50px rgba(0, 0, 0, 1);
+    animation: preloader-5-spin 10s linear infinite;
+    display: none;
+}
+
+@keyframes preloader-5-spin {
+    0%   {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes preloader-5-spin-none {
+    0%   {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+
+img.loader_gif{
+    width: 350px;
+    height: 350px;
+    margin:0;
+    border: 3px solid #0087DB;
+    border-radius: 100%;
+    animation: preloader-5-spin-none 10s linear infinite;
+}
+
+div.delite_form{
+    display: block;
+    margin: auto 30px;
+}
+
+
+button.del_btn{
+    background: #ff7575;
+	margin: auto 25px;
+	padding: 9px 30px;
+	color: #000;
+	border: 3px solid #e60000;
+	border-radius:15px;
+	box-shadow:0 0 15px 4px rgba(255, 15, 15, 1);
+	list-style: none;
+	font-size: 20px
+}
+
+button.del_btn:hover {
+    background: #eb6161;
+    border: 3px solid #d20000;
+}
+
+div.errors ul.errorlist{
+    font-size: 20px;
+    list-style: none;
+}
+
+div.errors ul.errorlist li{
+    list-style: none;
+    width: 700px;
+    margin: 20px auto 0 auto;
+    padding: 10px 20px;
+    font-size: 20px;
+    text-aling: center;
+    border: 2px solid #800000;
+    border-radius: 30px;
+    box-shadow:0 0 15px 4px rgba(204, 6, 5, 1);
+    overflow: hidden;
+}
+
+
 div.result_block{
     display: flex;
     list-style: none;
@@ -158,7 +241,7 @@ div.result_block{
 
 button.save_btn{
     background: #f8f32b;
-	margin: 16px 25px;
+	margin: auto 25px;
 	padding: 9px 10px;
 	color: #0087DB;
 	border: 3px solid #005aeb;
@@ -166,6 +249,27 @@ button.save_btn{
 	box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
 	list-style: none;
 	font-size: 20px
+}
+
+button.save_btn:hover{
+    background: #f3da0b;
+}
+
+div.save{
+    display: block;
+    margin: auto 30px;
+}
+
+div.save form{
+    margin: auto 25px;
+}
+
+p.last_req, p.save_stars{
+    font-size: 28px;
+}
+
+div.save_star{
+    margin: 0 0 50px 0;
 }
 
 div.info{

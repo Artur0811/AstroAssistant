@@ -2,10 +2,49 @@
 
 {% block content %}
 <div >
-    <p>Последние запросы</p>
+    <p class="last_req">Последние запросы:</p>
+    <ul class="list-articles">
+        {% for l in last %}
+            <li>
+                <div class="article-panel">
+                    <p class="first">Название: {{l.star_name}}</p>
+                    <p class="last">Дата запроса: {{l.time_create|date:"d-m-y H:i:s"}}</p>
+                </div>
+                <div class="star">
+                    <img class="curve" src="{{ l.light_curve.url }}">
+                    <div class="star_info">
+                        <div class="main_info">
+                            <p>Координаты: {{ l.coordinates }}</p>
+                            <p>Тип переменности: {{ l.star_type }}</p>
+                        </div>
+                        <div class="other_name">
+                            <p>Другие обозначения:</p>
+                            <div class="names">
+                                {% for n in l.get_names %}
+                                <p>{{n}}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="magn">
+                            <p>Магнитуда: {{l.magnitude }}</p>
+                        </div>
+                        {% if l.period %}
+                        <div class="per">
+                            <p>Период: {{l.period}} дней(я)</p>
+                            <p>Эпоха: {{l.epoch}}</p>
+                            {% if l.eclipse %}
+                            <p>Доля затмения: {{ l.eclipse }} %</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        </div>
+                    </div>
+            </li>
+        {% endfor %}
+    </ul>
 </div>
 <div class="save_star">
-    <p>Сохраненные запросы</p>
+    <p class="save_stars">Сохраненные запросы:</p>
     <ul class="list-articles">
         {% for s in stars %}
             <li>
@@ -36,10 +75,16 @@
                             <p>Период: {{s.period}} дней(я)</p>
                             <p>Эпоха: {{s.epoch}}</p>
                             {% if s.eclipse %}
-                            <p>Доля затмения: {{ s.eclipse }}</p>
+                            <p>Доля затмения: {{ s.eclipse }} %</p>
                             {% endif %}
                         </div>
                         {% endif %}
+                        </div>
+                        <div class="delite_form">
+                            <form method="post">
+                                {% csrf_token %}
+                                <button class="del_btn" type="submit" name="del_btn" value="{{ s.pk }}">Удалить</button>
+                            </form>
                         </div>
                     </div>
             </li>
