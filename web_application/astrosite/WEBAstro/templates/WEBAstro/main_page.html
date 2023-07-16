@@ -16,9 +16,9 @@
                 <li><a href="{% url i.url %}"> {{i.title}}</a></li>
             {% endfor %}
             {% if request.user.is_authenticated %}
-                <li class="last"><a href="{% url 'user_page' %}"> {{ user.username }}</a> |<a href="{% url 'logout' %}">Выйти</a></li>
+                <li class="last"><a href="{% url 'user_page' %}"> {{ user.username }}  <img class="account_img" src="{% static 'WEBAstro/images/account_icon.png' %}"></a> |<a href="{% url 'logout' %}">Выйти <img class="logout_img" src="{% static 'WEBAstro/images/logout.png' %}"></a></li>
             {% else %}
-                <li class="last"><a href="{% url 'login_page' %}"> Войти</a> |<a href="{% url 'register' %}"> Регистрация</a></li>
+                <li class="last"><a href="{% url 'login_page' %}"> Войти <img class="account_img" src="{% static 'WEBAstro/images/account_icon.png' %}"></a> |<a href="{% url 'register' %}"> Регистрация  <img src="{% static 'WEBAstro/images/register_icon.png' %}" class="reg_img"></a></li>
             {% endif %}
         </ul>
         <div class="clear"></div>
@@ -36,8 +36,10 @@
         <form action="{% url 'home' %}" method="post">
             {% csrf_token %}
             {% for f in form %}
-            <label class="form_label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
-            {{ f }}
+            <div class="req_data">
+                <label class="form_label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+                {{ f }}
+            </div>
             {% endfor %}
             <button type="submit" value="form1" name="req" id="submit" onclick="viewDiv()">Отправить</button>
         </form>

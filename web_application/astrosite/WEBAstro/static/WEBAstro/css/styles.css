@@ -284,6 +284,7 @@ div.info div{
 	box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
 }
 
+
 ul.req_text {
     height: auto
 }
@@ -364,6 +365,89 @@ ul.data button {
 
 ul.data button:hover{
     background: #f3da0b;
+}
+
+div.block_type_info{
+    display: flex;
+    width: 100%;
+}
+
+div.type_link{
+    display: grid;
+    height: 760px;
+    width: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+div.type_link a{
+    padding: 3px 0 3px 20px;
+    text-decoration: none;
+    border: 2px solid #3F4137;
+    color: #0fa3ff;
+    background: #ccc;
+    width: 100%;
+}
+
+div.type_link a:hover{
+    background: #aaa;
+    color: #0f71eb;
+}
+
+div.type_link_text{
+    height: 61px;
+    text-align: center;
+    font-size: 24px;
+    border: 2px solid #333
+}
+
+div.type_link_text p{
+    margin: 18px 0;
+}
+
+div.type_info{
+    height: 825px;
+    width: 100%;
+    overflow-y: scroll;
+}
+
+div.type_info p{
+    font-size: 20px;
+    overflow: auto;
+}
+
+div.type_info li{
+    border-bottom: 2px solid #ccc;
+    list-style-type: none;
+    padding: 20px 150px 20px 100px;
+}
+
+div.type_info_values{
+    display: flex;
+}
+
+div.type_img p{
+    padding: 5px 0;
+    margin: 0 100px 20px 100px;
+    text-align: center;
+    border: 3px solid #005aeb;
+	border-radius:20px;
+	box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
+}
+
+img.logout_img{
+    width: 30px;
+    margin: -5px;
+}
+
+img.account_img{
+    width: 35px;
+    margin: -5px;
+}
+
+img.reg_img{
+    width: 40px;
+    margin: -10px 0;
 }
 
 ul.load {

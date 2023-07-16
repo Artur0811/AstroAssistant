@@ -1,0 +1,46 @@
+{% extends "WEBAstro/main_page.html"%}
+
+{% block content %}
+<div class="block_type_info">
+    <div class="type_link_block">
+        <div class="type_link_text">
+            <p>Типы переменных звезд</p>
+        </div>
+        <div class="type_link">
+            {% for s in star_types %}
+            <a href="#{{ s.star_type }}"> {{ s.star_type }} </a>
+            {% endfor %}
+        </div>
+    </div>
+    <p>
+        <div class="type_info">
+            {% for s in star_types %}
+                <li>
+                    <div class="main_type">
+                        <p>Класс переменных звезд: {{ s.mainclass }}</p>
+                    </div>
+                    <div class="type">
+                        <h1 id="{{ s.star_type }}">
+                            <p>Тип переменной звезды: {{ s.star_type }}</p>
+                        </h1>
+                    </div>
+                    <div class="type_info_values">
+                        {% if s.light_curve %}
+                        <div class="type_img">
+                            <p class="curve_example">Пример графика</p>
+                            <img src="{{ s.light_curve.url }}">
+                        </div>
+                        {% endif %}
+                        <div class="type_text">
+                            <p>Информация о типе:</p>
+                            <p>
+                                {{ s.type_info }}
+                            </p>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </div>
+    </p>
+</div>
+{% endblock %}

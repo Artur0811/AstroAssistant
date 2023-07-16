@@ -11,4 +11,5 @@ urlpatterns = [
     path("register/", RegisterUser.as_view(), name = "register"),
     path("AstroAssistant/", AstroAssistant ,name = "astroassistant"),
     path("user/", User, name = "user_page"),
+    path("startypes/", Star_type_info, name = "startypes")
 ]

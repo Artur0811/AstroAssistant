@@ -50,3 +50,9 @@ class Last_Stars(models.Model):
 class Remove_curve(models.Model):
     light_curve = models.ImageField(upload_to="curve/%Y/%m/%d/")
     time_create = models.DateTimeField(auto_now=True)
+
+class TypeStarInfo(models.Model):
+    star_type = models.CharField(max_length=30)
+    mainclass = models.CharField(max_length=30)
+    type_info = models.CharField(max_length=3000)
+    light_curve = models.ImageField(upload_to="curve/%Y/%m/%d/", default=None)
