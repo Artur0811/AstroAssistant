@@ -130,7 +130,34 @@ div.form_err ul{
     overflow: hidden;
 }
 
+div.link_website{
+    display: grid;
+    font-size: 28px;
+    margin: 0 20px;
+    padding: 10px 50px;
+    border: 3px solid #005aeb;
+    border-radius:50px;
+    box-shadow:0 0 15px 4px rgba(15, 163, 255, 1);
+}
 
+div.link_website a{
+    margin: 10px 0;
+    border: 2px solid #000;
+    padding: 5px 20px;
+    text-align: center;
+    background: #ccc;
+    color: #0fa3ff;
+}
+
+div.link_website a:hover{
+    background: #aaa;
+    color: #2162ba;
+}
+
+li.about_text{
+    text-decoration: none;
+    list-style: none;
+}
 
 div.about{
     background: url('../images/nebula.png');
@@ -143,6 +170,7 @@ div.about{
 ul.about{
     border: 3px solid #005aeb;
     border-radius:15px;
+    padding: 10px 50px 60px 50px;
     background: rgba(248, 248, 255, 0.8);
 }
 
@@ -366,6 +394,7 @@ ul.data button {
 ul.data button:hover{
     background: #f3da0b;
 }
+
 
 div.block_type_info{
     display: flex;

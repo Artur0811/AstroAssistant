@@ -3,7 +3,12 @@
 {% block content %}
 <div class="about">
     <ul class="about">
-        <li class="about_text">{{about}}</li>
+        <li class="about_text">{{about|linebreaks}}</li>
+        <div class="link_website">
+            <p>Сылки на сайты:</p>
+            <a href="https://irsa.ipac.caltech.edu/cgi-bin/Gator/nph-dd?catalog=ztf_objects_dr17&mode=html" target="_blank">ZTF DR17</a>
+            <a href="http://vizier.cds.unistra.fr/viz-bin/VizieR" target="_blank">Vizier</a>
+        </div>
     </ul>
 </div>
 {% endblock %}

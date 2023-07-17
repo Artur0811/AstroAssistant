@@ -153,7 +153,22 @@ def PageNotFound(request, exception):
     return HttpResponseNotFound("<h1>Страница не найдена</h1>")
 
 def About(request):
-    return render(request, "WEBAstro/about.html", {"menu": menu, "title":"О программе", "about":"Тут будет текст о программе"})
+    text = """В астрономии есть множество направлений исследований и одно из них - изучение переменных звезд. Сайт разработан для быстрого сбора необходимой информации о переменных звездах.
+    
+            Пользователю необходимо ввести координаты звезды, дать ей название, правильно определить тип переменности и нажать кнопку обработать. Программа соберет информацию и выведет:
+             1. График изменения яркости звезды (У определённых типов переменных это фазовый график)
+             2. Магнитуду изменения яркости
+             3. Обозначения этой звезды в различных каталогах
+             
+             Также для некоторых типов переменных звезд будет выводиться дополнительная информация:
+             1. Период и эпоха для периодических переменных.
+             2. Доля затмения для двойных систем, компоненты которой периодически затмевают друг друга.
+             
+             Для построения графиков и определения магнитуды используются данные наблюдений ZTF(Zwicky Transient Facility). Обозначения звезды в каталогах из общего каталога Vizier.
+             
+             При регистрации на сайте вы сможете сохранять свои запросы и просматривать последние.
+             """
+    return render(request, "WEBAstro/about.html", {"menu": menu, "title":"О сайте", "about":text})
 
 def User(request):
     if request.method == "POST":
@@ -261,7 +276,7 @@ def Star_type_info(request):
 #     type_star.save()
     type_star = TypeStarInfo.objects.all()
     type_star = sorted(type_star, key=lambda x: x.star_type)
-    return render(request, "WEBAstro/startypeinfo.html", {"menu":menu, "star_types": type_star})
+    return render(request, "WEBAstro/startypeinfo.html", {"menu":menu, "star_types": type_star, "title":"Звезды"})
 
 
 
