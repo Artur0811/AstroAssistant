@@ -25,7 +25,6 @@ class RegisterUserForm(UserCreationForm):
         fields = ("username",  "password1", "password2")#"email",
         widgets = {
             "username": forms.TextInput(),
-            # "email": forms.EmailInput(),
             "password1": forms.PasswordInput(),
             "password2": forms.PasswordInput(),
         }
