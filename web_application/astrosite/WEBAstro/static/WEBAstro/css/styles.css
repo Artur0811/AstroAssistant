@@ -154,6 +154,8 @@ div.link_website a:hover{
     color: #2162ba;
 }
 
+
+
 li.about_text{
     text-decoration: none;
     list-style: none;
@@ -240,6 +242,29 @@ button.del_btn{
 button.del_btn:hover {
     background: #eb6161;
     border: 3px solid #d20000;
+}
+
+div.req_err{
+    margin: 0 auto;
+}
+
+ul.req_errorlist{
+    padding: 0;
+    font-size: 20px;
+    list-style: none;
+}
+
+ul.req_errorlist li{
+    list-style: none;
+    width: 700px;
+    margin: 20px auto 0 auto;
+    padding: 10px 20px;
+    font-size: 20px;
+    text-aling: center;
+    border: 2px solid #800000;
+    border-radius: 30px;
+    box-shadow:0 0 15px 4px rgba(204, 6, 5, 1);
+    overflow: hidden;
 }
 
 div.errors ul.errorlist{

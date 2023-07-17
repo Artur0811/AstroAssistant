@@ -1,6 +1,15 @@
 {% extends "WEBAstro/main_page.html"%}
 
 {% block result %}
+{% if req_err %}
+<div class="result_block" id="result_block">
+    <div class="req_err">
+        <ul class="req_errorlist">
+            <li>{{ req_err|linebreaks }}</li>
+        </ul>
+    </div>
+</div>
+{% else %}
 <p id="result">
     <div class="result_block" id="result_block">
         <div class="img">
@@ -48,6 +57,7 @@
         {% endif %}
     </div>
 </p>
+{% endif %}
 
 <script>
     function viewDiv(){

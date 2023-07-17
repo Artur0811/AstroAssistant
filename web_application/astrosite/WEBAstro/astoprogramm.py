@@ -207,7 +207,11 @@ class ZTF_Points:
                     ret["ZTF r"] = res_r
         else:
             ret["ZTF r"] = []
-        magn=max(magn, key=lambda x: abs(x[0]- x[1]))
+        if name_g != [] or name_r != []:
+            magn=max(magn, key=lambda x: abs(x[0]- x[1]))
+        else:
+            ret["magn"] = []
+            return ret
         ret["magn"] = {"min":str(magn[1])+" "+ magn[2], "max":str(magn[0]) + " " + magn[2]}
         return ret
 
