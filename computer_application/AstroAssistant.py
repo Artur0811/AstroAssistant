@@ -288,9 +288,9 @@ def LK1(a):
 def drob(n):
     return n - math.floor(n)
 
-def Lafler_clinman(name, max = True):
+def Lafler_clinman(name, maxi = True):
     with open(name) as f:
-        if max:
+        if maxi:
             ma = 32
         else:
             ma = -32
@@ -298,10 +298,10 @@ def Lafler_clinman(name, max = True):
         m = []
         for i in f:
             m.append(list(map(float, i.split())))
-            if m[-1][1] < ma and max:
+            if m[-1][1] < ma and maxi:
                 ma = m[-1][1]
                 ep0 = m[-1][0]
-            elif m[-1][1] > ma and not(max):
+            elif m[-1][1] > ma and not(maxi):
                 ma = m[-1][1]
                 ep0 = m[-1][0]
         with open("setting.txt") as f:
@@ -374,7 +374,7 @@ class ZTF_Points:
                 break
         name_g = []
         name_r = []
-
+        print(name_r, name_g)
         for i in range(len(b)):
             if i%23==0:
                 if ((float(b[i+1])-ra)**2+(float(b[i+2])-dec)**2)**0.5*3600 <1.5:#проверяю чтобы выбранные данные были ближе 1.5 арксек

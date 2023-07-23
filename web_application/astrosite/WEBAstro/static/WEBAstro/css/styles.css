@@ -291,6 +291,7 @@ div.info{
 }
 
 div.info div{
+    width: 600px;
     margin: 20px;
     padding: 10px;
     border: 3px solid #005aeb;
@@ -398,15 +399,15 @@ div.type_link{
 div.type_link a{
     padding: 3px 0 3px 20px;
     text-decoration: none;
-    border: 2px solid #3F4137;
-    color: #0fa3ff;
-    background: #ccc;
+    border: 1px solid #3F4137;
+    color: #555;
+    background: #fff;
     width: 100%;
 }
 
 div.type_link a:hover{
-    background: #aaa;
-    color: #0f71eb;
+    background: #ccc;
+    color: #444;
 }
 
 div.type_link_text{
